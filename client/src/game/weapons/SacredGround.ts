@@ -8,8 +8,8 @@ export class SacredGround extends WeaponBase {
 
   constructor() {
     const initialStats: WeaponStats = {
-      damage: 1, // Further reduced damage for better balance
-      cooldown: 3.0, // Further increased cooldown from 2.0 to 3.0 seconds
+      damage: 0.3, // Much lower damage so slimes survive but bats die
+      cooldown: 4.0, // Longer cooldown
       projectileCount: 1,
       radius: 80,
       duration: Infinity // Permanent around player
@@ -49,23 +49,24 @@ export class SacredGround extends WeaponBase {
         this.stats.radius = 100;
         break;
       case 3:
-        this.stats.damage = 2; // Further reduced damage progression
+        this.stats.damage = 0.6; // Much reduced damage progression
         break;
       case 4:
         this.stats.radius = 120;
         this.stats.cooldown = 2.5; // Slightly faster as level increases
         break;
       case 5:
-        this.stats.damage = 3;
+        this.stats.damage = 1.0;
+        this.stats.radius = 140;
         break;
       case 6:
         this.stats.radius = 150;
         break;
       case 7:
-        this.stats.damage = 4; // Much more conservative damage scaling
+        this.stats.damage = 1.5; // Much more conservative damage scaling
         break;
       case 8:
-        this.stats.damage = 6; // Reduced from 10 to 6
+        this.stats.damage = 2.0; // Much more reduced damage
         this.stats.radius = 180;
         this.stats.cooldown = 2.0;
         break;
@@ -79,7 +80,7 @@ export class SacredGround extends WeaponBase {
 
   protected onEvolve(): void {
     this.name = '천상의 심판';
-    this.stats.damage = 15; // Much more balanced evolved damage
+    this.stats.damage = 5; // Much more balanced evolved damage
     this.stats.radius = 250; // Reduced evolved range
     this.stats.cooldown = 1.5; // Faster but still balanced
     

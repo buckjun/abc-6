@@ -78,8 +78,10 @@ export class GameScene implements Scene {
     this.hasExperienceMagnet = false;
     this.waveManager.reset();
     
-    // Setup initial weapon - only Magic Orb
-    this.weaponManager.addWeapon('마력 구체');
+    // Setup initial weapon - only Magic Orb (check for duplicates)
+    if (this.weaponManager.getWeapons().length === 0) {
+      this.weaponManager.addWeapon('마력 구체');
+    }
     
     // Initialize UI scene
     const uiScene = this.game.getScene('ui');
@@ -812,11 +814,6 @@ export class GameScene implements Scene {
           enemy.takeDamage(bullet.getDamage());
           // No experience for hitting, only from gems
           
-          // Chain lightning effect
-          if (bullet.isChainLightning() && bullet.getChainCount() < bullet.getMaxChains()) {
-            this.createChainLightning(bullet, enemy);
-          }
-          
           // Destroy bullet unless it's penetrating
           if (!bullet.isPenetrating()) {
             bullet.destroy();
@@ -837,11 +834,6 @@ export class GameScene implements Scene {
           // Damage enemy
           enemy.takeDamage(bullet.getDamage());
           // No experience for hitting, only from gems
-          
-          // Chain lightning effect
-          if (bullet.isChainLightning() && bullet.getChainCount() < bullet.getMaxChains()) {
-            this.createChainLightning(bullet, enemy);
-          }
           
           // Destroy bullet unless it's penetrating
           if (!bullet.isPenetrating()) {
@@ -914,54 +906,7 @@ export class GameScene implements Scene {
     });
   }
 
-  private createChainLightning(sourceBullet: Bullet, hitEnemy: any): void {
-    const hitPos = hitEnemy.getPosition();
-    const allEnemies = [...this.enemies, ...this.newEnemies];
-    
-    // Find closest enemy to chain to
-    let closestEnemy: any = null;
-    let closestDistance = Infinity;
-    
-    allEnemies.forEach(enemy => {
-      if (enemy === hitEnemy || !enemy.isAlive()) return;
-      
-      const enemyPos = enemy.getPosition();
-      const distance = Math.sqrt(
-        Math.pow(enemyPos.x - hitPos.x, 2) + 
-        Math.pow(enemyPos.y - hitPos.y, 2)
-      );
-      
-      if (distance <= 150 && distance < closestDistance) { // Chain range 150px
-        closestDistance = distance;
-        closestEnemy = enemy;
-      }
-    });
-    
-    if (!closestEnemy) return;
-    
-    // Create chain lightning bullet
-    const closestPos = closestEnemy.getPosition();
-    
-    const chainBullet = new Bullet(
-      hitPos.x,
-      hitPos.y,
-      closestPos.x,
-      closestPos.y,
-      Math.floor(sourceBullet.getDamage() * 0.7), // 70% damage
-      600 // Faster speed for chain
-    );
-    
-    chainBullet.setColor('#9400D3'); // Purple chain lightning
-    chainBullet.setChainLightning(true, sourceBullet.getMaxChains());
-    chainBullet.incrementChainCount();
-    for (let i = 0; i < sourceBullet.getChainCount(); i++) {
-      chainBullet.incrementChainCount();
-    }
-    chainBullet.setPenetrating(false); // Chain bullets don't penetrate
-    
-    this.bullets.push(chainBullet);
-    console.log(`Chain lightning created! Chain count: ${chainBullet.getChainCount()}/${chainBullet.getMaxChains()}`);
-  }
+
 
   private removeDeadObjects(): void {
     this.enemies = this.enemies.filter(enemy => enemy.isAlive());

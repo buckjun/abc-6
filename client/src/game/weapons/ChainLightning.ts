@@ -5,25 +5,26 @@ import { Bullet } from '../entities/Bullet';
 
 export class ChainLightning extends WeaponBase {
   constructor() {
-    const initialStats: WeaponStats = {
-      damage: 20,
-      cooldown: 1.5,
+    super('연쇄 번개');
+    this.stats = {
+      damage: 15,
+      cooldown: 2.0,
       projectileCount: 1,
-      range: 200, // Chain range
-      penetration: 3 // How many enemies it can chain to
+      range: 180
     };
-    super('연쇄 번개', initialStats);
-    this.canEvolve = true;
+    this.maxLevel = 8;
+    this.evolutionRequirement = '룬 문자 비석';
   }
 
   protected fire(player: Player, enemies: Enemy[], mouseX: number, mouseY: number): Bullet[] {
     const playerPos = player.getPosition();
     
-    // Find closest enemy
-    let closestEnemy: Enemy | null = null;
+    // Find closest enemy within range
+    let closestEnemy: any = null;
     let closestDistance = Infinity;
     
-    enemies.forEach(enemy => {
+    const allEnemies = [...enemies];
+    allEnemies.forEach(enemy => {
       if (!enemy.isAlive()) return;
       
       const enemyPos = enemy.getPosition();
@@ -40,69 +41,46 @@ export class ChainLightning extends WeaponBase {
     
     if (!closestEnemy) return [];
     
-    // Create chain lightning bullet
-    const closestPos = closestEnemy.getPosition();
-    const dx = closestPos.x - playerPos.x;
-    const dy = closestPos.y - playerPos.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    // Create lightning bullet targeting closest enemy
+    const targetPos = closestEnemy.getPosition();
     
     const bullet = new Bullet(
       playerPos.x,
       playerPos.y,
-      dx / distance, // Normalized direction
-      dy / distance,
+      targetPos.x,
+      targetPos.y,
       this.stats.damage,
-      400 // Speed
+      500
     );
     
-    bullet.setColor('#9400D3'); // Purple for chain lightning
-    bullet.setChainLightning(true, this.stats.penetration || 3);
-    bullet.setPenetrating(true);
+    bullet.setColor('#9400D3'); // Purple lightning
+    bullet.setSize(8, 8);
     
-    console.log(`Chain Lightning fired with damage: ${this.stats.damage}, chains: ${this.stats.penetration}`);
+    console.log(`Chain Lightning fired with damage: ${this.stats.damage}`);
     
     return [bullet];
   }
 
-  protected updateStats(): void {
-    switch (this.level) {
-      case 2:
-        this.stats.damage = 30;
-        break;
-      case 3:
-        this.stats.penetration = 4; // More chain targets
-        break;
-      case 4:
-        this.stats.cooldown = 1.2;
-        break;
-      case 5:
-        this.stats.damage = 45;
-        this.stats.range = 250;
-        break;
-      case 6:
-        this.stats.penetration = 5;
-        break;
-      case 7:
-        this.stats.cooldown = 1.0;
-        break;
-      case 8:
-        this.stats.damage = 70;
-        this.stats.range = 300;
-        break;
+  public levelUp(): void {
+    if (this.level < this.maxLevel) {
+      this.level++;
+      this.stats.damage += 4;
+      this.stats.cooldown = Math.max(1.2, this.stats.cooldown - 0.1);
+      this.stats.range! += 25;
+      
+      console.log(`Chain Lightning leveled up! Level: ${this.level}, Damage: ${this.stats.damage}`);
     }
   }
 
-  protected onEvolve(): void {
-    this.name = '천둥의 군주';
-    this.stats.damage = 120;
-    this.stats.penetration = 8; // Chain to many enemies
-    this.stats.range = 400;
-    this.stats.cooldown = 0.8;
-    
-    console.log('Chain Lightning evolved to Thunder Lord!');
-  }
-
-  public checkEvolution(passiveItems: string[]): boolean {
-    return super.checkEvolution(passiveItems) && passiveItems.includes('전기 전도체');
+  public evolve(): void {
+    if (!this.evolved) {
+      this.evolved = true;
+      this.name = '천둥의 심판';
+      this.stats.damage += 20;
+      this.stats.range! += 80;
+      this.stats.cooldown = Math.max(0.8, this.stats.cooldown - 0.4);
+      
+      console.log(`Chain Lightning evolved to Thunder Judgment!`);
+    }
   }
 }

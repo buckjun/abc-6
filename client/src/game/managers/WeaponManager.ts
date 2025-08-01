@@ -3,6 +3,7 @@ import { MagicBolt } from '../weapons/MagicBolt';
 import { Shuriken } from '../weapons/Shuriken';
 import { SacredGround } from '../weapons/SacredGround';
 import { ChainLightning } from '../weapons/ChainLightning';
+import { InfiniteBlade } from '../weapons/InfiniteBlade';
 import { Player } from '../entities/Player';
 import { Enemy } from '../entities/Enemy';
 import { Bullet } from '../entities/Bullet';
@@ -43,6 +44,9 @@ export class WeaponManager {
           break;
         case '연쇄 번개':
           weapon = new ChainLightning();
+          break;
+        case '무한의 칼날':
+          weapon = new InfiniteBlade();
           break;
         default:
           console.warn(`Unknown weapon type: ${weaponType}`);
@@ -134,7 +138,7 @@ export class WeaponManager {
 
     // Add new weapon options if slots available
     if (this.getAvailableWeaponSlots() > 0) {
-      const availableWeapons = ['마력 구체', '수리검', '신성한 영역', '연쇄 번개'];
+      const availableWeapons = ['마력 구체', '수리검', '신성한 영역', '연쇄 번개', '무한의 칼날'];
       availableWeapons.forEach(weaponType => {
         if (!this.weapons.some(w => w.getName().includes(weaponType))) {
           options.push(weaponType);
