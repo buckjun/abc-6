@@ -8,8 +8,8 @@ export class SacredGround extends WeaponBase {
 
   constructor() {
     const initialStats: WeaponStats = {
-      damage: 5, // DPS (damage per second)
-      cooldown: 0.1, // Continuous effect
+      damage: 8, // Increased damage for balanced gameplay (bats 1 hit, goblins 2 hits, mid-tier 3 hits)
+      cooldown: 0.33, // Attack every 0.33 seconds for balanced hit rate
       projectileCount: 1,
       radius: 80,
       duration: Infinity // Permanent around player

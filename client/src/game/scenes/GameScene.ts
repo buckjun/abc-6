@@ -1009,6 +1009,9 @@ export class GameScene implements Scene {
     ctx.fillText(`Time: ${Math.floor(this.gameTime)}s`, 10, 90);
     ctx.fillText(`Enemies: ${this.enemies.length + this.newEnemies.length}`, 10, 110);
 
+    // Render weapon images (synchronized with TutorialScene)
+    this.renderWeaponImages(ctx);
+
     // Render level up UI
     if (this.levelUpUI.isActive()) {
       const canvas = this.game.getCanvas();
@@ -1024,6 +1027,67 @@ export class GameScene implements Scene {
     const uiScene = this.game.getScene('ui');
     if (uiScene) {
       uiScene.render(ctx);
+    }
+  }
+
+  private renderWeaponImages(ctx: CanvasRenderingContext2D): void {
+    const canvas = this.game.getCanvas();
+    const weapons = this.weaponManager.getWeapons();
+    
+    // Weapon image container (bottom right)
+    const containerX = canvas.width - 250;
+    const containerY = canvas.height - 120;
+    const imageSize = 40;
+    const spacing = 50;
+    
+    // Background for weapon container
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(containerX - 10, containerY - 10, 240, 80);
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(containerX - 10, containerY - 10, 240, 80);
+    
+    // Title
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 14px "Courier New", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('무기:', containerX, containerY - 15);
+    
+    // Render weapon images
+    weapons.forEach((weapon, index) => {
+      if (index >= 4) return; // Limit to 4 weapons displayed
+      
+      const weaponX = containerX + index * spacing;
+      const weaponY = containerY;
+      
+      // Weapon icon background
+      ctx.fillStyle = '#333333';
+      ctx.fillRect(weaponX, weaponY, imageSize, imageSize);
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(weaponX, weaponY, imageSize, imageSize);
+      
+      // Simple weapon icon representation
+      ctx.fillStyle = this.getWeaponColor(weapon.getName());
+      ctx.fillRect(weaponX + 5, weaponY + 5, imageSize - 10, imageSize - 10);
+      
+      // Weapon level
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 12px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${weapon.getLevel()}`, weaponX + imageSize / 2, weaponY + imageSize + 15);
+    });
+  }
+  
+  private getWeaponColor(weaponName: string): string {
+    switch (weaponName) {
+      case '마력 구체': return '#4A90E2'; // Blue
+      case '수리검': return '#8B4513'; // Brown
+      case '신성한 영역': return '#FFD700'; // Gold
+      case '화염구': return '#FF4500'; // Orange
+      case '냉기 창': return '#00FFFF'; // Cyan
+      case '번개': return '#FFFF00'; // Yellow
+      default: return '#FFFFFF'; // White
     }
   }
 

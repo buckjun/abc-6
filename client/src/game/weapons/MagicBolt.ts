@@ -42,7 +42,7 @@ export class MagicBolt extends WeaponBase {
       bullet.setDamage(this.stats.damage);
       bullet.setSpeed(300);
       bullet.setColor('#4A90E2'); // Blue magic color
-      bullet.setPenetrating(true); // Magic bolts penetrate
+      bullet.setPenetrating(false); // Magic bolts do not penetrate (synchronized with user request)
       bullet.init();
       
       bullets.push(bullet);

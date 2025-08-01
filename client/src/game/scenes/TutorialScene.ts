@@ -90,8 +90,23 @@ export class TutorialScene implements Scene {
     
     this.gameTime += deltaTime;
     
-    // Handle input for player movement
-    this.handleInput();
+    // Handle level up menu interactions
+    if (this.showLevelUpMenu) {
+      // Check for number key inputs
+      if (this.game.getInputManager().isKeyPressed('1') && this.levelUpOptions.length >= 1) {
+        this.selectLevelUpOption(0);
+      } else if (this.game.getInputManager().isKeyPressed('2') && this.levelUpOptions.length >= 2) {
+        this.selectLevelUpOption(1);
+      } else if (this.game.getInputManager().isKeyPressed('3') && this.levelUpOptions.length >= 3) {
+        this.selectLevelUpOption(2);
+      } else if (this.game.getInputManager().isKeyPressed('4') && this.levelUpOptions.length >= 4) {
+        this.selectLevelUpOption(3);
+      }
+      return; // Pause game during level up
+    }
+
+    // Handle player movement using WASD + Arrow keys (from GameScene)
+    this.handlePlayerMovement(deltaTime);
     
     // Update player
     this.player.update(deltaTime);
@@ -150,6 +165,38 @@ export class TutorialScene implements Scene {
     
     // Check experience and level up
     this.checkLevelUp();
+  }
+
+  private handlePlayerMovement(deltaTime: number): void {
+    const inputManager = this.game.getInputManager();
+    let moveX = 0;
+    let moveY = 0;
+
+    // WASD and Arrow key movement (synchronized with GameScene)
+    if (inputManager.isKeyDown('KeyW') || inputManager.isKeyDown('ArrowUp')) {
+      moveY = -1;
+      console.log('Key pressed:', inputManager.getLastPressedKey(), inputManager.getLastPressedKey());
+    }
+    if (inputManager.isKeyDown('KeyS') || inputManager.isKeyDown('ArrowDown')) {
+      moveY = 1;
+      console.log('Key pressed:', inputManager.getLastPressedKey(), inputManager.getLastPressedKey());
+    }
+    if (inputManager.isKeyDown('KeyA') || inputManager.isKeyDown('ArrowLeft')) {
+      moveX = -1;
+      console.log('Key pressed:', inputManager.getLastPressedKey(), inputManager.getLastPressedKey());
+    }
+    if (inputManager.isKeyDown('KeyD') || inputManager.isKeyDown('ArrowRight')) {
+      moveX = 1;
+      console.log('Key pressed:', inputManager.getLastPressedKey(), inputManager.getLastPressedKey());
+    }
+
+    // Normalize diagonal movement
+    if (moveX !== 0 && moveY !== 0) {
+      moveX *= 0.707; // 1/sqrt(2)
+      moveY *= 0.707;
+    }
+
+    this.player.setMovement(moveX, moveY);
   }
 
   private spawnBoss(): void {
@@ -231,40 +278,7 @@ export class TutorialScene implements Scene {
     return { x, y };
   }
 
-  private handleInput(): void {
-    const inputManager = this.game.getInputManager();
-    let moveX = 0;
-    let moveY = 0;
-    
-    if (inputManager.isKeyDown('ArrowLeft') || inputManager.isKeyDown('a') || inputManager.isKeyDown('A')) {
-      moveX = -1;
-    }
-    if (inputManager.isKeyDown('ArrowRight') || inputManager.isKeyDown('d') || inputManager.isKeyDown('D')) {
-      moveX = 1;
-    }
-    if (inputManager.isKeyDown('ArrowUp') || inputManager.isKeyDown('w') || inputManager.isKeyDown('W')) {
-      moveY = -1;
-    }
-    if (inputManager.isKeyDown('ArrowDown') || inputManager.isKeyDown('s') || inputManager.isKeyDown('S')) {
-      moveY = 1;
-    }
-    
-    this.player.setMovement(moveX, moveY);
-    
-    // Handle level up menu input
-    if (this.showLevelUpMenu) {
-      // Check for key presses (single press)
-      if (this.game.getInputManager().isKeyPressed('1') && this.levelUpOptions.length >= 1) {
-        this.selectLevelUpOption(0);
-      } else if (this.game.getInputManager().isKeyPressed('2') && this.levelUpOptions.length >= 2) {
-        this.selectLevelUpOption(1);
-      } else if (this.game.getInputManager().isKeyPressed('3') && this.levelUpOptions.length >= 3) {
-        this.selectLevelUpOption(2);
-      } else if (this.game.getInputManager().isKeyPressed('4') && this.levelUpOptions.length >= 4) {
-        this.selectLevelUpOption(3);
-      }
-    }
-  }
+
 
   private checkBulletEnemyCollisions(): void {
     this.bullets.forEach(bullet => {
@@ -328,8 +342,14 @@ export class TutorialScene implements Scene {
       const enemyBounds = enemy.getBounds();
       
       if (GameUtils.isColliding(playerBounds, enemyBounds)) {
-        this.player.takeDamage(enemy.getDamage());
+        // Player takes damage when touching enemies (synchronized with GameScene)
+        this.player.takeDamage(6); // 6 damage per collision
+        console.log(`Player took 6 damage. Health: ${this.player.getHealth()}`);
         
+        // Enemy disappears after touching player (synchronized with GameScene)
+        enemy.destroy();
+        
+        // Check if player died
         if (this.player.getHealth() <= 0) {
           this.endTutorial(false); // Game over
         }

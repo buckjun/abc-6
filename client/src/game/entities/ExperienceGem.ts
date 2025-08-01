@@ -16,17 +16,17 @@ export class ExperienceGem {
     this.y = y;
     this.value = value;
     
-    // Set color and size based on value (updated for new values)
+    // Set color and size based on value - bright colors for better visibility against brown background
     if (value >= 100) {
-      this.color = '#0066FF'; // Blue for high value (100+ xp)
+      this.color = '#00FFFF'; // Bright cyan for high value (100+ xp) - contrasts with brown
       this.width = 16;
       this.height = 16;
     } else if (value >= 50) {
-      this.color = '#9932CC'; // Purple for medium value (50+ xp)
+      this.color = '#FF00FF'; // Bright magenta for medium value (50+ xp) - contrasts with brown
       this.width = 14;
       this.height = 14;
     } else {
-      this.color = '#FFD700'; // Yellow for low value (25+ xp)
+      this.color = '#00FF00'; // Bright green for low value (25+ xp) - contrasts with brown
       this.width = 12;
       this.height = 12;
     }
