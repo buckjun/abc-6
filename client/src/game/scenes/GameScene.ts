@@ -78,10 +78,9 @@ export class GameScene implements Scene {
     this.hasExperienceMagnet = false;
     this.waveManager.reset();
     
-    // Setup initial weapon - only Magic Orb (check for duplicates)
-    if (this.weaponManager.getWeapons().length === 0) {
-      this.weaponManager.addWeapon('마력 구체');
-    }
+    // Clear all weapons and add only Magic Orb
+    this.weaponManager = new WeaponManager();
+    this.weaponManager.addWeapon('마력 구체');
     
     // Initialize UI scene
     const uiScene = this.game.getScene('ui');
@@ -321,7 +320,7 @@ export class GameScene implements Scene {
     const options: LevelUpOption[] = [];
     
     // Available weapons
-    const allWeapons = ['마력 구체', '수리검', '신성한 영역', '연쇄 번개', '무한의 칼날', '천상의 심판'];
+    const allWeapons = ['마력 구체', '수리검', '신성한 영역', '화염탄', '얼음 화살'];
     const currentWeapons = this.weaponManager.getWeaponNames();
     
     // Available passive items

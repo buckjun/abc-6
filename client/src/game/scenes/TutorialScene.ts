@@ -66,7 +66,8 @@ export class TutorialScene implements Scene {
     console.log('TutorialScene initialized');
     this.player.init();
     
-    // Start with Magic Orb only
+    // Clear all weapons and add only Magic Orb
+    this.weaponManager = new WeaponManager();
     this.weaponManager.addWeapon('마력 구체');
     
     // Reset all game state

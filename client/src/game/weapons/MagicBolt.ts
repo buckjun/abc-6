@@ -7,7 +7,7 @@ import { GameUtils } from '../utils/GameUtils';
 export class MagicBolt extends WeaponBase {
   constructor() {
     const initialStats: WeaponStats = {
-      damage: 10,
+      damage: 8,
       cooldown: 1.2,
       projectileCount: 1
     };
