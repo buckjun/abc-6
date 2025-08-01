@@ -175,19 +175,15 @@ export class TutorialScene implements Scene {
     // WASD and Arrow key movement (synchronized with GameScene)
     if (inputManager.isKeyDown('KeyW') || inputManager.isKeyDown('ArrowUp')) {
       moveY = -1;
-      console.log('Key pressed:', inputManager.getLastPressedKey(), inputManager.getLastPressedKey());
     }
     if (inputManager.isKeyDown('KeyS') || inputManager.isKeyDown('ArrowDown')) {
       moveY = 1;
-      console.log('Key pressed:', inputManager.getLastPressedKey(), inputManager.getLastPressedKey());
     }
     if (inputManager.isKeyDown('KeyA') || inputManager.isKeyDown('ArrowLeft')) {
       moveX = -1;
-      console.log('Key pressed:', inputManager.getLastPressedKey(), inputManager.getLastPressedKey());
     }
     if (inputManager.isKeyDown('KeyD') || inputManager.isKeyDown('ArrowRight')) {
       moveX = 1;
-      console.log('Key pressed:', inputManager.getLastPressedKey(), inputManager.getLastPressedKey());
     }
 
     // Normalize diagonal movement
@@ -688,17 +684,17 @@ export class TutorialScene implements Scene {
   private renderLevelUpMenu(ctx: CanvasRenderingContext2D): void {
     const canvas = this.game.getCanvas();
     
-    // Semi-transparent overlay
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    // Light semi-transparent overlay (less intrusive)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Menu background
+    // Menu background with improved transparency
     const menuX = canvas.width / 2 - 300;
     const menuY = canvas.height / 2 - 200;
     const menuWidth = 600;
     const menuHeight = 400;
     
-    ctx.fillStyle = '#2A2A2A';
+    ctx.fillStyle = 'rgba(42, 42, 42, 0.9)';
     ctx.fillRect(menuX, menuY, menuWidth, menuHeight);
     ctx.strokeStyle = '#FFD700';
     ctx.lineWidth = 3;
@@ -710,22 +706,55 @@ export class TutorialScene implements Scene {
     ctx.textAlign = 'center';
     ctx.fillText('LEVEL UP!', canvas.width / 2, menuY + 50);
     
-    // Options
+    // Options with color-coded backgrounds
     ctx.font = '18px "Courier New", monospace';
     this.levelUpOptions.forEach((option, index) => {
       const optionY = menuY + 120 + index * 60;
       
-      // Option background
-      ctx.fillStyle = '#404040';
+      // Color-coded option background based on type
+      let bgColor = '#404040';
+      let borderColor = '#666666';
+      if (option.type === 'weapon') {
+        bgColor = 'rgba(70, 130, 180, 0.7)'; // Steel blue for weapons
+        borderColor = '#4682B4';
+      } else if (option.id && option.id.startsWith('upgrade_')) {
+        bgColor = 'rgba(255, 165, 0, 0.7)'; // Orange for upgrades
+        borderColor = '#FFA500';
+      } else if (option.type === 'passive') {
+        bgColor = 'rgba(50, 205, 50, 0.7)'; // Lime green for passives
+        borderColor = '#32CD32';
+      } else if (option.type === 'special') {
+        bgColor = 'rgba(218, 165, 32, 0.7)'; // Gold for special items
+        borderColor = '#DAA520';
+      }
+      
+      ctx.fillStyle = bgColor;
       ctx.fillRect(menuX + 20, optionY - 25, menuWidth - 40, 50);
       
-      // Option text
+      // Option border
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(menuX + 20, optionY - 25, menuWidth - 40, 50);
+      
+      // Option text with enhanced visibility
       ctx.fillStyle = '#FFFFFF';
       ctx.textAlign = 'left';
       ctx.fillText(`${index + 1}. ${option.name}`, menuX + 40, optionY - 5);
       ctx.font = '14px "Courier New", monospace';
-      ctx.fillStyle = '#CCCCCC';
+      ctx.fillStyle = '#F0F0F0';
       ctx.fillText(option.description, menuX + 40, optionY + 15);
+      ctx.font = '18px "Courier New", monospace';
+      
+      // Type indicator
+      ctx.fillStyle = borderColor;
+      ctx.font = 'bold 12px "Courier New", monospace';
+      ctx.textAlign = 'right';
+      let typeText = '';
+      if (option.type === 'weapon') typeText = '새 무기';
+      else if (option.id && option.id.startsWith('upgrade_')) typeText = '강화';
+      else if (option.type === 'passive') typeText = '패시브';
+      else if (option.type === 'special') typeText = '특수';
+      ctx.fillText(typeText, menuX + menuWidth - 30, optionY - 10);
       ctx.font = '18px "Courier New", monospace';
     });
     

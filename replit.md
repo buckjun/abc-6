@@ -11,6 +11,17 @@ Preferred communication style: Simple, everyday language.
 ## Game Title Change
 - Renamed from "Auto-Slayer" to "ABC-Slayer" per user request
 
+## UI and UX Improvements (February 1, 2025)
+- **Critical Tutorial Bug Fix**: Removed problematic `inputManager.getLastPressedKey` debug code causing JavaScript errors
+- **Enhanced Level-up Menu Design**: Implemented color-coded item selection system for both tutorial and infinite modes:
+  - **Weapons**: Steel blue backgrounds (#4682B4) with "새 무기" indicator
+  - **Upgrades**: Orange backgrounds (#FFA500) with "강화" indicator  
+  - **Passives**: Lime green backgrounds (#32CD32) with "패시브" indicator
+  - **Special Items**: Gold backgrounds (#DAA520) with "특수" indicator
+- **Improved Transparency**: Reduced level-up overlay opacity from 0.7 to 0.4 for less intrusive gameplay experience
+- **Enhanced Text Readability**: Used "Courier New" monospace font with improved contrast and Korean type indicators
+- **Better Visual Hierarchy**: Added colored borders and enhanced spacing in both tutorial and infinite mode level-up systems
+
 ## Gameplay Balance Improvements (January 31, 2025)
 - Sacred Ground weapon damage interval increased from 1.0 to 2.0 seconds for better enemy movement flow
 - Enemy health significantly increased for better damage balance:

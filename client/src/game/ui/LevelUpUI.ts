@@ -78,8 +78,8 @@ export class LevelUpUI {
   render(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number): void {
     if (!this.active) return;
 
-    // Semi-transparent overlay
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    // Light semi-transparent overlay (less intrusive)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     // Title
@@ -104,13 +104,30 @@ export class LevelUpUI {
     this.options.forEach((option, index) => {
       const cardX = startX + index * (cardWidth + spacing);
       
+      // Color-coded card background based on type
+      let bgColor = 'rgba(51, 51, 51, 0.9)';
+      let borderColor = '#666666';
+      if (option.type === 'weapon') {
+        bgColor = 'rgba(70, 130, 180, 0.8)'; // Steel blue for weapons
+        borderColor = '#4682B4';
+      } else if (option.type === 'upgrade') {
+        bgColor = 'rgba(255, 165, 0, 0.8)'; // Orange for upgrades
+        borderColor = '#FFA500';
+      } else if (option.type === 'passive') {
+        bgColor = 'rgba(50, 205, 50, 0.8)'; // Lime green for passives
+        borderColor = '#32CD32';
+      } else if (option.type === 'special') {
+        bgColor = 'rgba(218, 165, 32, 0.8)'; // Gold for special items
+        borderColor = '#DAA520';
+      }
+      
       // Card background
-      ctx.fillStyle = this.getCardColor(option.type);
+      ctx.fillStyle = bgColor;
       ctx.fillRect(cardX, startY, cardWidth, cardHeight);
 
-      // Card border
-      ctx.strokeStyle = '#FFD700';
-      ctx.lineWidth = 2;
+      // Enhanced card border
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 3;
       ctx.strokeRect(cardX, startY, cardWidth, cardHeight);
 
       // Option number
@@ -132,18 +149,23 @@ export class LevelUpUI {
       const maxDescWidth = cardWidth - 20;
       this.wrapText(ctx, option.description, cardX + cardWidth/2, startY + 70, maxDescWidth, 14);
 
-      // Type indicator
-      ctx.fillStyle = this.getTypeColor(option.type);
-      ctx.font = 'bold 10px Arial';
+      // Type indicator with Korean text
+      ctx.fillStyle = borderColor;
+      ctx.font = 'bold 10px "Courier New", monospace';
       ctx.textAlign = 'right';
-      ctx.fillText(option.type.toUpperCase(), cardX + cardWidth - 10, startY + cardHeight - 10);
+      let typeText = '';
+      if (option.type === 'weapon') typeText = '새 무기';
+      else if (option.type === 'upgrade') typeText = '강화';
+      else if (option.type === 'passive') typeText = '패시브';
+      else if (option.type === 'special') typeText = '특수';
+      ctx.fillText(typeText, cardX + cardWidth - 10, startY + cardHeight - 10);
     });
 
-    // Instructions
-    ctx.fillStyle = '#AAAAAA';
-    ctx.font = '14px Arial';
+    // Instructions with improved visibility
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '14px "Courier New", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('Click on a card or press 1-' + this.options.length, canvasWidth / 2, canvasHeight / 2 + 100);
+    ctx.fillText('카드를 클릭하거나 숫자 키(1-4)를 눌러 선택하세요', canvasWidth / 2, canvasHeight / 2 + 100);
   }
 
   private getCardColor(type: string): string {
