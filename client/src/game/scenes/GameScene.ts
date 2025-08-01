@@ -11,12 +11,10 @@ export class GameScene implements Scene {
   private gameTime: number = 0;
   private spawnTimer: number = 0;
   private spawnInterval: number = 2.0; // seconds
-  private uiScene: Scene;
 
   constructor(game: Game) {
     this.game = game;
     this.player = new Player(640, 360); // Center of screen
-    this.uiScene = this.game['scenes'].get('ui')!;
   }
 
   init(): void {
@@ -31,7 +29,10 @@ export class GameScene implements Scene {
     this.enemies = [];
     
     // Initialize UI scene
-    this.uiScene.init();
+    const uiScene = this.game.getScene('ui');
+    if (uiScene) {
+      uiScene.init();
+    }
     
     // Set initial game data
     this.game.setGameData({
@@ -94,7 +95,10 @@ export class GameScene implements Scene {
     this.enemies = this.enemies.filter(enemy => enemy.isAlive());
 
     // Update UI scene
-    this.uiScene.update(deltaTime);
+    const uiScene = this.game.getScene('ui');
+    if (uiScene) {
+      uiScene.update(deltaTime);
+    }
 
     // Check game over
     if (this.player.getHealth() <= 0) {
@@ -211,12 +215,18 @@ export class GameScene implements Scene {
     });
 
     // Render UI overlay
-    this.uiScene.render(ctx);
+    const uiScene = this.game.getScene('ui');
+    if (uiScene) {
+      uiScene.render(ctx);
+    }
   }
 
   destroy(): void {
     this.game.getAudioManager().stopBackgroundMusic();
-    this.uiScene.destroy();
+    const uiScene = this.game.getScene('ui');
+    if (uiScene) {
+      uiScene.destroy();
+    }
     console.log('GameScene destroyed');
   }
 }

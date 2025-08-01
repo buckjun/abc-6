@@ -101,6 +101,10 @@ export class Game {
     this.gameData = { ...this.gameData, ...data };
   }
 
+  public getScene(sceneType: SceneType): Scene | undefined {
+    return this.scenes.get(sceneType);
+  }
+
   private start(): void {
     this.lastTime = performance.now();
     this.gameLoop();
