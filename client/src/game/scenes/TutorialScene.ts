@@ -245,16 +245,16 @@ export class TutorialScene implements Scene {
     let moveX = 0;
     let moveY = 0;
     
-    if (inputManager.isKeyPressed('ArrowLeft') || inputManager.isKeyPressed('a') || inputManager.isKeyPressed('A')) {
+    if (inputManager.isKeyDown('ArrowLeft') || inputManager.isKeyDown('a') || inputManager.isKeyDown('A')) {
       moveX = -1;
     }
-    if (inputManager.isKeyPressed('ArrowRight') || inputManager.isKeyPressed('d') || inputManager.isKeyPressed('D')) {
+    if (inputManager.isKeyDown('ArrowRight') || inputManager.isKeyDown('d') || inputManager.isKeyDown('D')) {
       moveX = 1;
     }
-    if (inputManager.isKeyPressed('ArrowUp') || inputManager.isKeyPressed('w') || inputManager.isKeyPressed('W')) {
+    if (inputManager.isKeyDown('ArrowUp') || inputManager.isKeyDown('w') || inputManager.isKeyDown('W')) {
       moveY = -1;
     }
-    if (inputManager.isKeyPressed('ArrowDown') || inputManager.isKeyPressed('s') || inputManager.isKeyPressed('S')) {
+    if (inputManager.isKeyDown('ArrowDown') || inputManager.isKeyDown('s') || inputManager.isKeyDown('S')) {
       moveY = 1;
     }
     
@@ -262,13 +262,13 @@ export class TutorialScene implements Scene {
     
     // Handle level up menu input
     if (this.showLevelUpMenu) {
-      if (inputManager.isKeyPressed('1') && this.levelUpOptions.length >= 1) {
+      if (inputManager.isKeyDown('1') && this.levelUpOptions.length >= 1) {
         this.selectLevelUpOption(0);
-      } else if (inputManager.isKeyPressed('2') && this.levelUpOptions.length >= 2) {
+      } else if (inputManager.isKeyDown('2') && this.levelUpOptions.length >= 2) {
         this.selectLevelUpOption(1);
-      } else if (inputManager.isKeyPressed('3') && this.levelUpOptions.length >= 3) {
+      } else if (inputManager.isKeyDown('3') && this.levelUpOptions.length >= 3) {
         this.selectLevelUpOption(2);
-      } else if (inputManager.isKeyPressed('4') && this.levelUpOptions.length >= 4) {
+      } else if (inputManager.isKeyDown('4') && this.levelUpOptions.length >= 4) {
         this.selectLevelUpOption(3);
       }
     }

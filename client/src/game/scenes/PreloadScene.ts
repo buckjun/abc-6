@@ -55,7 +55,7 @@ export class PreloadScene implements Scene {
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '48px "Courier New", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('AUTO-SLAYER', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('ABC-SLAYER', canvas.width / 2, canvas.height / 2 - 50);
 
     // Loading bar background
     const barWidth = 400;
