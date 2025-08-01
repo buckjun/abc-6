@@ -13,6 +13,10 @@ import { SkeletonSoldier } from '../entities/enemies/SkeletonSoldier';
 import { GoblinShaman } from '../entities/enemies/GoblinShaman';
 import { Ogre } from '../entities/enemies/Ogre';
 import { Reaper } from '../entities/enemies/Reaper';
+import { ExperienceGem } from '../entities/ExperienceGem';
+import { TreasureChest } from '../entities/TreasureChest';
+import { LevelUpUI, LevelUpOption } from '../ui/LevelUpUI';
+import { WaveManager } from '../managers/WaveManager';
 
 export class GameScene implements Scene {
   private game: Game;
@@ -21,7 +25,11 @@ export class GameScene implements Scene {
   private newEnemies: EnemyBase[] = [];
   private bullets: Bullet[] = [];
   private areaEffects: AreaEffect[] = [];
+  private experienceGems: ExperienceGem[] = [];
+  private treasureChests: TreasureChest[] = [];
   private weaponManager: WeaponManager;
+  private waveManager: WaveManager;
+  private levelUpUI: LevelUpUI;
   private gameTime: number = 0;
   private spawnTimer: number = 0;
   private baseSpawnInterval: number = 2.0; // seconds
@@ -31,11 +39,15 @@ export class GameScene implements Scene {
   private experience: number = 0;
   private experienceToNext: number = 100;
   private reaperSpawned: boolean = false;
+  private gamePaused: boolean = false;
+  private hasExperienceMagnet: boolean = false;
 
   constructor(game: Game) {
     this.game = game;
     this.player = new Player(640, 360); // Center of screen
     this.weaponManager = new WeaponManager();
+    this.waveManager = new WaveManager();
+    this.levelUpUI = new LevelUpUI();
   }
 
   init(): void {
@@ -53,10 +65,15 @@ export class GameScene implements Scene {
     this.newEnemies = [];
     this.bullets = [];
     this.areaEffects = [];
+    this.experienceGems = [];
+    this.treasureChests = [];
     this.playerLevel = 1;
     this.experience = 0;
     this.experienceToNext = 100;
     this.reaperSpawned = false;
+    this.gamePaused = false;
+    this.hasExperienceMagnet = false;
+    this.waveManager.reset();
     
     // Setup initial weapons
     this.weaponManager.addWeapon('마력 구체');
@@ -91,11 +108,41 @@ export class GameScene implements Scene {
     inputManager.onKeyPress('Escape', () => {
       this.game.switchScene('mainmenu');
     });
+
+    // Level up UI input handlers
+    inputManager.onKeyPress('Digit1', () => {
+      this.levelUpUI.handleKeyPress('1');
+    });
+    inputManager.onKeyPress('Digit2', () => {
+      this.levelUpUI.handleKeyPress('2');
+    });
+    inputManager.onKeyPress('Digit3', () => {
+      this.levelUpUI.handleKeyPress('3');
+    });
+    inputManager.onKeyPress('Digit4', () => {
+      this.levelUpUI.handleKeyPress('4');
+    });
+
+    // Mouse click handler for level up UI
+    inputManager.onMouseClick((x, y) => {
+      if (this.levelUpUI.isActive()) {
+        const canvas = this.game.getCanvas();
+        this.levelUpUI.handleClick(x, y, canvas.width, canvas.height);
+      }
+    });
   }
 
   update(deltaTime: number): void {
+    // Handle level up UI input
+    if (this.levelUpUI.isActive()) {
+      // Game is paused during level up
+      return;
+    }
+
+    if (this.gamePaused) return;
+
     this.gameTime += deltaTime;
-    this.spawnTimer += deltaTime;
+    this.waveManager.update(deltaTime);
 
     // Update game data
     this.game.setGameData({
@@ -112,27 +159,18 @@ export class GameScene implements Scene {
     // Update player
     this.player.update(deltaTime);
 
-    // Spawn enemies based on time
+    // Wave-based enemy spawning
     this.spawnTimer += deltaTime;
-    this.eliteSpawnTimer += deltaTime;
-    this.bossSpawnTimer += deltaTime;
-
-    const currentSpawnInterval = this.getSpawnInterval();
-    if (this.spawnTimer >= currentSpawnInterval) {
-      this.spawnEnemiesByTime();
+    const waveSpawnInterval = this.waveManager.getSpawnInterval();
+    if (this.spawnTimer >= waveSpawnInterval) {
+      this.spawnEnemiesFromWave();
       this.spawnTimer = 0;
     }
 
-    // Spawn elite enemies
-    if (this.eliteSpawnTimer >= 30.0 && this.gameTime >= 15 * 60) { // Every 30 seconds after 15 minutes
-      this.spawnEliteEnemy();
-      this.eliteSpawnTimer = 0;
-    }
-
-    // Spawn reaper boss at 30 minutes
-    if (this.gameTime >= 30 * 60 && !this.reaperSpawned) {
-      this.spawnReaper();
-      this.reaperSpawned = true;
+    // Check for boss spawns
+    const bossSpawn = this.waveManager.shouldSpawnBoss();
+    if (bossSpawn.shouldSpawn) {
+      this.spawnBoss(bossSpawn.bossType);
     }
 
     // Update old enemies
@@ -149,6 +187,16 @@ export class GameScene implements Scene {
       } else {
         enemy.update(deltaTime, playerPos.x, playerPos.y);
       }
+    });
+
+    // Update experience gems
+    this.experienceGems.forEach(gem => {
+      gem.update(deltaTime, playerPos.x, playerPos.y, this.hasExperienceMagnet);
+    });
+
+    // Update treasure chests  
+    this.treasureChests.forEach(chest => {
+      chest.update(deltaTime);
     });
 
     // Collect projectiles from Goblin Shamans
@@ -190,11 +238,12 @@ export class GameScene implements Scene {
     this.bullets.push(...newBullets);
     this.areaEffects.push(...newAreaEffects);
 
-    // Check bullet-enemy collisions
+    // Check collisions
     this.checkBulletEnemyCollisions();
-
-    // Check player-enemy collisions
     this.checkPlayerEnemyCollisions();
+    this.checkAreaEffectCollisions();
+    this.checkExperienceGemCollisions();
+    this.checkTreasureChestCollisions();
 
     // Check level up
     this.checkLevelUp();
@@ -245,28 +294,235 @@ export class GameScene implements Scene {
     if (this.experience >= this.experienceToNext) {
       this.playerLevel++;
       this.experience -= this.experienceToNext;
-      this.experienceToNext = Math.floor(this.experienceToNext * 1.2); // Increase requirement
+      this.experienceToNext = Math.floor(100 * Math.pow(this.playerLevel, 1.5)); // Level formula: 100 * level^1.5
       
       console.log(`Level up! Now level ${this.playerLevel}`);
+      this.game.getAudioManager().playSound('/sounds/success.mp3');
+      
+      // Show level up UI
       this.showLevelUpOptions();
     }
   }
 
   private showLevelUpOptions(): void {
-    const options = this.weaponManager.getUpgradeOptions();
-    if (options.length > 0) {
-      // For now, auto-select the first option
-      // TODO: Show UI for player to choose
-      const selectedOption = options[0];
-      
-      if (['마력 구체', '수리검', '신성한 영역'].includes(selectedOption)) {
-        this.weaponManager.addWeapon(selectedOption);
-      } else {
-        this.weaponManager.addPassiveItem(selectedOption);
+    const options = this.generateLevelUpOptions();
+    this.levelUpUI.show(options, (selectedOption) => {
+      this.applyLevelUpReward(selectedOption);
+    });
+  }
+
+  private generateLevelUpOptions(): LevelUpOption[] {
+    const options: LevelUpOption[] = [];
+    
+    // Available weapons
+    const allWeapons = ['마력 구체', '수리검', '신성한 영역', '연쇄 번개', '무한의 칼날', '천상의 심판'];
+    const currentWeapons = this.weaponManager.getWeaponNames();
+    
+    // Available passive items
+    const allPassives = ['체력 증가', '이동속도', '공격력', '경험치 획득', '쿨타임 감소', '관통력'];
+    
+    // Add weapon upgrades
+    currentWeapons.forEach(weapon => {
+      if (this.weaponManager.getWeaponLevel(weapon) < 8) {
+        options.push({
+          id: `upgrade_${weapon}`,
+          name: `${weapon} 강화`,
+          description: `${weapon}의 위력을 증가시킵니다 (Lv${this.weaponManager.getWeaponLevel(weapon)} → ${this.weaponManager.getWeaponLevel(weapon) + 1})`,
+          type: 'upgrade'
+        });
       }
-      
-      console.log(`Auto-selected upgrade: ${selectedOption}`);
+    });
+    
+    // Add new weapons
+    const availableNewWeapons = allWeapons.filter(weapon => !currentWeapons.includes(weapon));
+    availableNewWeapons.slice(0, 2).forEach(weapon => {
+      options.push({
+        id: `new_${weapon}`,
+        name: weapon,
+        description: `새로운 무기를 획득합니다`,
+        type: 'weapon'
+      });
+    });
+    
+    // Add passive items
+    allPassives.slice(0, 2).forEach(passive => {
+      options.push({
+        id: `passive_${passive}`,
+        name: passive,
+        description: `${passive} 능력을 향상시킵니다`,
+        type: 'passive'
+      });
+    });
+    
+    // Add special rewards (low chance)
+    if (Math.random() < 0.3) {
+      options.push({
+        id: 'special_heal',
+        name: '체력 회복',
+        description: '체력을 최대치로 회복합니다',
+        type: 'special'
+      });
     }
+    
+    if (Math.random() < 0.2) {
+      options.push({
+        id: 'special_magnet',
+        name: '경험치 자석',
+        description: '경험치 보석 수집 범위가 크게 증가합니다',
+        type: 'special'
+      });
+    }
+    
+    // Return up to 4 random options
+    const shuffled = options.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(4, shuffled.length));
+  }
+
+  private applyLevelUpReward(option: LevelUpOption): void {
+    console.log(`Selected reward: ${option.name}`);
+    
+    if (option.id.startsWith('upgrade_')) {
+      const weaponName = option.id.replace('upgrade_', '');
+      this.weaponManager.upgradeWeapon(weaponName);
+    } else if (option.id.startsWith('new_')) {
+      const weaponName = option.id.replace('new_', '');
+      this.weaponManager.addWeapon(weaponName);
+    } else if (option.id.startsWith('passive_')) {
+      const passiveName = option.id.replace('passive_', '');
+      this.applyPassiveBonus(passiveName);
+    } else if (option.id === 'special_heal') {
+      this.player.heal(this.player.getMaxHealth());
+      console.log('Player healed to full health!');
+    } else if (option.id === 'special_magnet') {
+      this.hasExperienceMagnet = true;
+      console.log('Experience magnet activated!');
+    }
+  }
+
+  private applyPassiveBonus(passiveName: string): void {
+    switch (passiveName) {
+      case '체력 증가':
+        this.player.increaseMaxHealth(20);
+        break;
+      case '이동속도':
+        this.player.increaseSpeed(20);
+        break;
+      case '공격력':
+        // This would be handled by weapon manager
+        console.log('Attack power increased!');
+        break;
+      case '경험치 획득':
+        // This would modify experience gain multiplier
+        console.log('Experience gain increased!');
+        break;
+      case '쿨타임 감소':
+        // This would be handled by weapon manager
+        console.log('Cooldown reduced!');
+        break;
+      case '관통력':
+        // This would be handled by weapon manager  
+        console.log('Penetration increased!');
+        break;
+    }
+  }
+
+  private checkExperienceGemCollisions(): void {
+    const playerBounds = this.player.getBounds();
+    
+    this.experienceGems.forEach(gem => {
+      if (!gem.isAlive()) return;
+      
+      const gemBounds = gem.getBounds();
+      
+      if (GameUtils.isColliding(playerBounds, gemBounds)) {
+        this.experience += gem.getValue();
+        gem.destroy();
+        console.log(`Collected ${gem.getValue()} experience`);
+      }
+    });
+  }
+
+  private checkTreasureChestCollisions(): void {
+    const playerBounds = this.player.getBounds();
+    
+    this.treasureChests.forEach(chest => {
+      if (!chest.isAlive()) return;
+      
+      const chestBounds = chest.getBounds();
+      
+      if (GameUtils.isColliding(playerBounds, chestBounds)) {
+        const rewards = chest.getRewards();
+        chest.open();
+        chest.destroy();
+        
+        // Apply treasure rewards
+        rewards.forEach(reward => {
+          this.applyTreasureReward(reward);
+        });
+        
+        console.log('Treasure chest opened!', rewards);
+      }
+    });
+  }
+
+  private applyTreasureReward(reward: string): void {
+    switch (reward) {
+      case '체력 회복':
+        this.player.heal(50);
+        break;
+      case '경험치 자석':
+        this.hasExperienceMagnet = true;
+        break;
+      case '공격력 증가':
+        // Would be handled by weapon manager
+        console.log('Attack power bonus from treasure!');
+        break;
+      case '이동속도 증가':
+        this.player.increaseSpeed(10);
+        break;
+      case '무기 강화':
+        // Upgrade a random weapon
+        const weapons = this.weaponManager.getWeaponNames();
+        if (weapons.length > 0) {
+          const randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
+          this.weaponManager.upgradeWeapon(randomWeapon);
+        }
+        break;
+      case '패시브 아이템':
+        // Give experience bonus
+        this.experience += 100;
+        break;
+    }
+  }
+
+  private dropExperienceGem(x: number, y: number, baseValue: number): void {
+    // Drop different gem types based on value
+    let gemValue = baseValue;
+    if (baseValue >= 50) {
+      gemValue = 50; // Blue gem
+    } else if (baseValue >= 25) {
+      gemValue = 25; // Purple gem  
+    } else {
+      gemValue = 10; // Yellow gem
+    }
+    
+    const gem = new ExperienceGem(x, y, gemValue);
+    gem.init();
+    this.experienceGems.push(gem);
+  }
+
+  private dropTreasureChest(x: number, y: number): void {
+    const chest = new TreasureChest(x, y, 3);
+    chest.init();
+    this.treasureChests.push(chest);
+  }
+
+  private checkAreaEffectCollisions(): void {
+    this.areaEffects.forEach(effect => {
+      const damagedEnemies = effect.applyDamage(this.newEnemies);
+      // Award experience for area effect damage
+      this.experience += damagedEnemies.length * 5;
+    });
   }
 
   private getSpawnInterval(): number {
@@ -407,6 +663,72 @@ export class GameScene implements Scene {
     console.log('THE REAPER HAS AWAKENED!');
   }
 
+  private spawnEnemiesFromWave(): void {
+    const enemyTypes = this.waveManager.getEnemyTypesToSpawn();
+    const maxEnemies = this.waveManager.getMaxEnemies();
+    const currentEnemyCount = this.newEnemies.length + this.enemies.length;
+    
+    if (currentEnemyCount >= maxEnemies) return;
+    
+    const canvas = this.game.getCanvas();
+    const spawnPos = this.getRandomSpawnPosition(canvas);
+    
+    // Select random enemy type from current wave
+    const randomType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+    
+    switch (randomType) {
+      case 'slime':
+        this.spawnSlime(spawnPos.x, spawnPos.y);
+        break;
+      case 'bat':
+        this.spawnBat(spawnPos.x, spawnPos.y);
+        break;
+      case 'skeleton':
+        this.spawnSkeletonSoldier(spawnPos.x, spawnPos.y);
+        break;
+      case 'goblin':
+        this.spawnGoblinShaman(spawnPos.x, spawnPos.y);
+        break;
+      case 'ogre':
+        this.spawnEliteEnemy();
+        break;
+    }
+  }
+
+  private spawnBoss(bossType: string): void {
+    const canvas = this.game.getCanvas();
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    console.log(`Spawning boss: ${bossType}`);
+    
+    switch (bossType) {
+      case 'mini_boss':
+        // Spawn multiple elite enemies
+        for (let i = 0; i < 2; i++) {
+          const spawnPos = this.getRandomSpawnPosition(canvas);
+          this.spawnEliteEnemy();
+        }
+        break;
+      case 'boss':
+      case 'elite_boss':
+        // Spawn Ogre boss
+        const ogre = new Ogre(centerX, centerY - 100);
+        ogre.init();
+        this.newEnemies.push(ogre);
+        break;
+      case 'reaper':
+        // Spawn the ultimate boss
+        if (!this.reaperSpawned) {
+          const reaper = new Reaper(centerX, centerY - 100, this.playerLevel, canvas.width, canvas.height);
+          reaper.init();
+          this.newEnemies.push(reaper);
+          this.reaperSpawned = true;
+        }
+        break;
+    }
+  }
+
   private spawnEnemy(): void {
     const canvas = this.game.getCanvas();
     const side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
@@ -487,11 +809,14 @@ export class GameScene implements Scene {
           this.game.getAudioManager().playSound('/sounds/hit.mp3');
           console.log(`${enemy.constructor.name} hit by bullet for ${bullet.getDamage()} damage`);
           
-          // Check for treasure drop from Ogre
-          if (enemy instanceof Ogre && !enemy.isAlive()) {
-            if (enemy.shouldDropTreasure()) {
+          // Drop experience gem when enemy dies
+          if (!enemy.isAlive()) {
+            this.dropExperienceGem(enemy.getPosition().x, enemy.getPosition().y, enemy.getExperienceValue());
+            
+            // Check for treasure drop from Ogre
+            if (enemy instanceof Ogre && enemy.shouldDropTreasure()) {
+              this.dropTreasureChest(enemy.getPosition().x, enemy.getPosition().y);
               console.log('Ogre dropped treasure!');
-              this.experience += 50; // Bonus experience
             }
           }
         }
@@ -576,6 +901,8 @@ export class GameScene implements Scene {
     this.newEnemies = this.newEnemies.filter(enemy => enemy.isAlive());
     this.bullets = this.bullets.filter(bullet => bullet.isAlive());
     this.areaEffects = this.areaEffects.filter(effect => effect.isActive());
+    this.experienceGems = this.experienceGems.filter(gem => gem.isAlive());
+    this.treasureChests = this.treasureChests.filter(chest => chest.isAlive());
   }
 
   private gameOver(): void {
@@ -624,6 +951,22 @@ export class GameScene implements Scene {
     this.newEnemies.forEach(enemy => {
       enemy.render(ctx);
     });
+
+    // Render experience gems
+    this.experienceGems.forEach(gem => {
+      gem.render(ctx);
+    });
+
+    // Render treasure chests
+    this.treasureChests.forEach(chest => {
+      chest.render(ctx);
+    });
+
+    // Render level up UI
+    if (this.levelUpUI.isActive()) {
+      const canvas = this.game.getCanvas();
+      this.levelUpUI.render(ctx, canvas.width, canvas.height);
+    }
 
     // Render bullets
     this.bullets.forEach(bullet => {
