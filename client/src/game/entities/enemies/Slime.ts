@@ -5,7 +5,7 @@ export class Slime extends EnemyBase {
     super(x, y, 25, 50); // health: 25 (increased from 10), speed: 50
     this.color = '#00AA00';
     this.damage = 8;
-    this.experienceValue = 5;
+    this.experienceValue = 25; // Low value gem
     this.width = 35;  // Increased from 28 for better hit rate
     this.height = 35; // Increased from 28 for better hit rate
   }

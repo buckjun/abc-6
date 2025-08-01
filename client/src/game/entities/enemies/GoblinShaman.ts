@@ -13,7 +13,7 @@ export class GoblinShaman extends EnemyBase {
     super(x, y, 50, 45); // health: 50 (increased from 30), speed: 45
     this.color = '#228B22';
     this.damage = 12;
-    this.experienceValue = 20;
+    this.experienceValue = 75; // Very high value gem
     this.width = 28;
     this.height = 32;
   }

@@ -597,20 +597,24 @@ export class GameScene implements Scene {
     }
   }
 
-  private dropExperienceGem(x: number, y: number, baseValue: number): void {
-    // Use updated gem values based on enemy type
-    let gemValue = baseValue;
-    if (baseValue >= 50) {
-      gemValue = 100; // Blue gem (updated from 50 to 100)
-    } else if (baseValue >= 25) {
-      gemValue = 50; // Purple gem (updated from 25 to 50)
+  private dropExperienceGem(x: number, y: number, enemyExpValue: number): void {
+    // Create gem with actual enemy experience value
+    let gemValue = enemyExpValue;
+    
+    // Ensure minimum gem values for visual consistency
+    if (enemyExpValue >= 60) {
+      gemValue = 100; // Cyan gem for strongest enemies (GoblinShaman, SkeletonSoldier)
+    } else if (enemyExpValue >= 30) {
+      gemValue = 50; // Hot pink gem for medium enemies (Bat)
     } else {
-      gemValue = 25; // Yellow gem (updated from 10 to 25)
+      gemValue = 25; // Spring green gem for weak enemies (Slime)
     }
     
     const gem = new ExperienceGem(x, y, gemValue);
     gem.init();
     this.experienceGems.push(gem);
+    
+    console.log(`Experience gem dropped: ${gemValue} XP from enemy worth ${enemyExpValue}`);
   }
 
   private dropTreasureChest(x: number, y: number): void {

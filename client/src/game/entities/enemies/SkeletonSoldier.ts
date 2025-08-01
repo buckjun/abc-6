@@ -9,7 +9,7 @@ export class SkeletonSoldier extends EnemyBase {
     super(x, y, 60, 70); // health: 60 (increased from 40), speed: 70
     this.color = '#CCCCCC';
     this.damage = 15;
-    this.experienceValue = 15;
+    this.experienceValue = 50; // High value gem
     this.width = 36;  // Increased from 30 for better hit rate
     this.height = 42;  // Increased from 36 for better hit rate
     this.formationId = formationId;
