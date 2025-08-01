@@ -15,11 +15,17 @@ export class Bullet {
   private penetrating: boolean = false;
   private homing: boolean = false;
   private target: Enemy | null = null;
+  private chainLightning: boolean = false;
+  private chainCount: number = 0;
+  private maxChains: number = 0;
 
-  constructor(x: number, y: number, targetX: number, targetY: number) {
+  constructor(x: number, y: number, targetX: number, targetY: number, damage?: number, speed?: number) {
     this.x = x;
     this.y = y;
     this.id = `bullet_${Date.now()}_${Math.random()}`;
+    
+    if (damage !== undefined) this.damage = damage;
+    if (speed !== undefined) this.speed = speed;
     
     // Calculate normalized direction vector
     const dx = targetX - x;
@@ -185,5 +191,26 @@ export class Bullet {
 
   getTarget(): Enemy | null {
     return this.target;
+  }
+
+  setChainLightning(isChain: boolean, maxChains: number): void {
+    this.chainLightning = isChain;
+    this.maxChains = maxChains;
+  }
+
+  isChainLightning(): boolean {
+    return this.chainLightning;
+  }
+
+  getChainCount(): number {
+    return this.chainCount;
+  }
+
+  getMaxChains(): number {
+    return this.maxChains;
+  }
+
+  incrementChainCount(): void {
+    this.chainCount++;
   }
 }

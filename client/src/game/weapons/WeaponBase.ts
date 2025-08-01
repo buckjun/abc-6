@@ -8,6 +8,7 @@ export interface WeaponStats {
   range?: number;
   radius?: number;
   duration?: number;
+  penetration?: number;
 }
 
 export abstract class WeaponBase {

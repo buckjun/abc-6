@@ -573,6 +573,8 @@ export class GameScene implements Scene {
       interval = 0.8; // Medium-fast spawning after 10 minutes
     } else if (timeMinutes >= 5) {
       interval = 1.2; // Medium spawning after 5 minutes
+    } else if (timeMinutes >= 1.5) { // Changed from 3 to 1.5 minutes
+      interval = 1.8; // Start increasing spawn rate at 1.5 minutes
     }
     
     return interval;
@@ -810,6 +812,11 @@ export class GameScene implements Scene {
           enemy.takeDamage(bullet.getDamage());
           // No experience for hitting, only from gems
           
+          // Chain lightning effect
+          if (bullet.isChainLightning() && bullet.getChainCount() < bullet.getMaxChains()) {
+            this.createChainLightning(bullet, enemy);
+          }
+          
           // Destroy bullet unless it's penetrating
           if (!bullet.isPenetrating()) {
             bullet.destroy();
@@ -817,11 +824,6 @@ export class GameScene implements Scene {
           
           this.game.getAudioManager().playSound('/sounds/hit.mp3');
           console.log(`Enemy hit by bullet for ${bullet.getDamage()} damage`);
-          
-          // Check for chain lightning if evolved Magic Bolt
-          if (bullet.getColor() === '#4A90E2') {
-            this.checkChainLightning(enemy, bullet.getDamage());
-          }
         }
       });
 
@@ -835,6 +837,11 @@ export class GameScene implements Scene {
           // Damage enemy
           enemy.takeDamage(bullet.getDamage());
           // No experience for hitting, only from gems
+          
+          // Chain lightning effect
+          if (bullet.isChainLightning() && bullet.getChainCount() < bullet.getMaxChains()) {
+            this.createChainLightning(bullet, enemy);
+          }
           
           // Destroy bullet unless it's penetrating
           if (!bullet.isPenetrating()) {
@@ -907,28 +914,53 @@ export class GameScene implements Scene {
     });
   }
 
-  private checkChainLightning(hitEnemy: Enemy, damage: number): void {
-    // Find nearby enemies for chain lightning
+  private createChainLightning(sourceBullet: Bullet, hitEnemy: any): void {
     const hitPos = hitEnemy.getPosition();
-    const chainTargets: Enemy[] = [];
+    const allEnemies = [...this.enemies, ...this.newEnemies];
     
-    this.enemies.forEach(enemy => {
+    // Find closest enemy to chain to
+    let closestEnemy: any = null;
+    let closestDistance = Infinity;
+    
+    allEnemies.forEach(enemy => {
       if (enemy === hitEnemy || !enemy.isAlive()) return;
       
       const enemyPos = enemy.getPosition();
-      const distance = GameUtils.distance(hitPos.x, hitPos.y, enemyPos.x, enemyPos.y);
+      const distance = Math.sqrt(
+        Math.pow(enemyPos.x - hitPos.x, 2) + 
+        Math.pow(enemyPos.y - hitPos.y, 2)
+      );
       
-      if (distance <= 150 && chainTargets.length < 3) { // Chain to max 3 enemies within 150px
-        chainTargets.push(enemy);
+      if (distance <= 150 && distance < closestDistance) { // Chain range 150px
+        closestDistance = distance;
+        closestEnemy = enemy;
       }
     });
     
-    // Apply chain damage
-    chainTargets.forEach(enemy => {
-      enemy.takeDamage(Math.floor(damage * 0.7)); // 70% of original damage
-      this.experience += 5;
-      console.log('Chain lightning hit enemy!');
-    });
+    if (!closestEnemy) return;
+    
+    // Create chain lightning bullet
+    const closestPos = closestEnemy.getPosition();
+    
+    const chainBullet = new Bullet(
+      hitPos.x,
+      hitPos.y,
+      closestPos.x,
+      closestPos.y,
+      Math.floor(sourceBullet.getDamage() * 0.7), // 70% damage
+      600 // Faster speed for chain
+    );
+    
+    chainBullet.setColor('#9400D3'); // Purple chain lightning
+    chainBullet.setChainLightning(true, sourceBullet.getMaxChains());
+    chainBullet.incrementChainCount();
+    for (let i = 0; i < sourceBullet.getChainCount(); i++) {
+      chainBullet.incrementChainCount();
+    }
+    chainBullet.setPenetrating(false); // Chain bullets don't penetrate
+    
+    this.bullets.push(chainBullet);
+    console.log(`Chain lightning created! Chain count: ${chainBullet.getChainCount()}/${chainBullet.getMaxChains()}`);
   }
 
   private removeDeadObjects(): void {
