@@ -123,8 +123,8 @@ export class GameScene implements Scene {
       this.levelUpUI.handleKeyPress('4');
     });
 
-    // Mouse click handler for level up UI
-    inputManager.onMouseClick((x, y) => {
+    // Mouse click handler for level up UI  
+    inputManager.onCanvasClick((x, y) => {
       if (this.levelUpUI.isActive()) {
         const canvas = this.game.getCanvas();
         this.levelUpUI.handleClick(x, y, canvas.width, canvas.height);

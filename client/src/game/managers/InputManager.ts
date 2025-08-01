@@ -1,6 +1,7 @@
 export class InputManager {
   private keys: Set<string> = new Set();
   private keyPressHandlers: Map<string, () => void> = new Map();
+  private mouseClickHandlers: ((x: number, y: number) => void)[] = [];
   private mouseX: number = 0;
   private mouseY: number = 0;
   private canvas: HTMLCanvasElement | null = null;
@@ -24,6 +25,7 @@ export class InputManager {
     if (!this.canvas) return;
 
     this.canvas.addEventListener('mousemove', this.handleMouseMove);
+    this.canvas.addEventListener('click', this.handleMouseClick);
     console.log('Mouse tracking enabled');
   }
 
@@ -36,6 +38,22 @@ export class InputManager {
     
     this.mouseX = (event.clientX - rect.left) * scaleX;
     this.mouseY = (event.clientY - rect.top) * scaleY;
+  };
+
+  private handleMouseClick = (event: MouseEvent): void => {
+    if (!this.canvas) return;
+
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    
+    const clickX = (event.clientX - rect.left) * scaleX;
+    const clickY = (event.clientY - rect.top) * scaleY;
+    
+    // Call all registered click handlers
+    this.mouseClickHandlers.forEach(handler => {
+      handler(clickX, clickY);
+    });
   };
 
   private handleKeyDown = (event: KeyboardEvent): void => {
@@ -93,16 +111,22 @@ export class InputManager {
     return { x: this.mouseX, y: this.mouseY };
   }
 
+  public onCanvasClick(handler: (x: number, y: number) => void): void {
+    this.mouseClickHandlers.push(handler);
+  }
+
   public destroy(): void {
     document.removeEventListener('keydown', this.handleKeyDown);
     document.removeEventListener('keyup', this.handleKeyUp);
     
     if (this.canvas) {
       this.canvas.removeEventListener('mousemove', this.handleMouseMove);
+      this.canvas.removeEventListener('click', this.handleMouseClick);
     }
     
     this.keys.clear();
     this.keyPressHandlers.clear();
+    this.mouseClickHandlers = [];
     console.log('InputManager destroyed');
   }
 }
