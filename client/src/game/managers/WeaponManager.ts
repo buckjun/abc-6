@@ -108,6 +108,15 @@ export class WeaponManager {
     return this.maxPassives - this.passiveItems.length;
   }
 
+  public getWeaponNames(): string[] {
+    return this.weapons.map(weapon => weapon.getName());
+  }
+
+  public getWeaponLevel(weaponName: string): number {
+    const weapon = this.weapons.find(w => w.getName() === weaponName);
+    return weapon ? weapon.getLevel() : 0;
+  }
+
   // Get weapon upgrade options for level up
   public getUpgradeOptions(): string[] {
     const options: string[] = [];

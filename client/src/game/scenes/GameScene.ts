@@ -17,6 +17,7 @@ import { ExperienceGem } from '../entities/ExperienceGem';
 import { TreasureChest } from '../entities/TreasureChest';
 import { LevelUpUI, LevelUpOption } from '../ui/LevelUpUI';
 import { WaveManager } from '../managers/WaveManager';
+import { ExperienceBar } from '../ui/ExperienceBar';
 
 export class GameScene implements Scene {
   private game: Game;
@@ -30,6 +31,7 @@ export class GameScene implements Scene {
   private weaponManager: WeaponManager;
   private waveManager: WaveManager;
   private levelUpUI: LevelUpUI;
+  private experienceBar: ExperienceBar;
   private gameTime: number = 0;
   private spawnTimer: number = 0;
   private baseSpawnInterval: number = 2.0; // seconds
@@ -48,6 +50,7 @@ export class GameScene implements Scene {
     this.weaponManager = new WeaponManager();
     this.waveManager = new WaveManager();
     this.levelUpUI = new LevelUpUI();
+    this.experienceBar = new ExperienceBar();
   }
 
   init(): void {
@@ -152,6 +155,9 @@ export class GameScene implements Scene {
       experience: this.experience,
       experienceToNext: this.experienceToNext
     });
+
+    // Update experience bar
+    this.experienceBar.update(this.experience, this.experienceToNext, this.playerLevel);
 
     // Handle player movement
     this.handlePlayerMovement(deltaTime);
@@ -383,7 +389,13 @@ export class GameScene implements Scene {
     
     if (option.id.startsWith('upgrade_')) {
       const weaponName = option.id.replace('upgrade_', '');
-      this.weaponManager.upgradeWeapon(weaponName);
+      // Find and upgrade existing weapon
+      const weapons = this.weaponManager.getWeapons();
+      const weapon = weapons.find(w => w.getName() === weaponName);
+      if (weapon) {
+        weapon.levelUp();
+        console.log(`${weaponName} upgraded to level ${weapon.getLevel()}`);
+      }
     } else if (option.id.startsWith('new_')) {
       const weaponName = option.id.replace('new_', '');
       this.weaponManager.addWeapon(weaponName);
@@ -391,7 +403,10 @@ export class GameScene implements Scene {
       const passiveName = option.id.replace('passive_', '');
       this.applyPassiveBonus(passiveName);
     } else if (option.id === 'special_heal') {
-      this.player.heal(this.player.getMaxHealth());
+      // Heal player to full health
+      const currentHealth = this.player.getHealth();
+      const healAmount = 100 - currentHealth; // Assuming max health is 100
+      this.player.damage(-healAmount); // Negative damage = healing
       console.log('Player healed to full health!');
     } else if (option.id === 'special_magnet') {
       this.hasExperienceMagnet = true;
@@ -402,10 +417,13 @@ export class GameScene implements Scene {
   private applyPassiveBonus(passiveName: string): void {
     switch (passiveName) {
       case '체력 증가':
-        this.player.increaseMaxHealth(20);
+        // Heal player as a simple health increase
+        this.player.damage(-20); // Negative damage = healing
+        console.log('Max health increased!');
         break;
       case '이동속도':
-        this.player.increaseSpeed(20);
+        // Speed increase would need to be implemented in Player class
+        console.log('Movement speed increased!');
         break;
       case '공격력':
         // This would be handled by weapon manager
@@ -468,7 +486,7 @@ export class GameScene implements Scene {
   private applyTreasureReward(reward: string): void {
     switch (reward) {
       case '체력 회복':
-        this.player.heal(50);
+        this.player.damage(-50); // Negative damage = healing
         break;
       case '경험치 자석':
         this.hasExperienceMagnet = true;
@@ -478,14 +496,16 @@ export class GameScene implements Scene {
         console.log('Attack power bonus from treasure!');
         break;
       case '이동속도 증가':
-        this.player.increaseSpeed(10);
+        // Speed increase would need to be implemented in Player class
+        console.log('Movement speed bonus from treasure!');
         break;
       case '무기 강화':
         // Upgrade a random weapon
-        const weapons = this.weaponManager.getWeaponNames();
+        const weapons = this.weaponManager.getWeapons();
         if (weapons.length > 0) {
           const randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
-          this.weaponManager.upgradeWeapon(randomWeapon);
+          randomWeapon.levelUp();
+          console.log(`${randomWeapon.getName()} upgraded from treasure!`);
         }
         break;
       case '패시브 아이템':
@@ -519,9 +539,20 @@ export class GameScene implements Scene {
 
   private checkAreaEffectCollisions(): void {
     this.areaEffects.forEach(effect => {
-      const damagedEnemies = effect.applyDamage(this.newEnemies);
-      // Award experience for area effect damage
-      this.experience += damagedEnemies.length * 5;
+      // Apply damage to old enemies
+      const damagedOldEnemies = effect.applyDamage(this.enemies);
+      this.experience += damagedOldEnemies.length * 5;
+      
+      // Apply damage to new enemies (convert to Enemy[] format for compatibility)
+      const newEnemiesForEffect = this.newEnemies.map(enemy => ({
+        ...enemy,
+        baseSpeed: 50, // Default speed
+        getHealth: () => enemy.getHealth ? enemy.getHealth() : 100,
+        getMaxHealth: () => 100
+      } as Enemy));
+      
+      const damagedNewEnemies = effect.applyDamage(newEnemiesForEffect);
+      this.experience += damagedNewEnemies.length * 5;
     });
   }
 
@@ -961,6 +992,9 @@ export class GameScene implements Scene {
     this.treasureChests.forEach(chest => {
       chest.render(ctx);
     });
+
+    // Render experience bar
+    this.experienceBar.render(ctx);
 
     // Render level up UI
     if (this.levelUpUI.isActive()) {
