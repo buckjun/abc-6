@@ -993,8 +993,17 @@ export class GameScene implements Scene {
       chest.render(ctx);
     });
 
-    // Render experience bar
+    // Render experience bar first (at very top)
     this.experienceBar.render(ctx);
+
+    // Render UI (moved down to avoid overlap with experience bar)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Level: ${this.playerLevel}`, 10, 35);
+    ctx.fillText(`Health: ${this.player.getHealth()}`, 10, 55);
+    ctx.fillText(`Time: ${Math.floor(this.gameTime)}s`, 10, 75);
+    ctx.fillText(`Enemies: ${this.enemies.length + this.newEnemies.length}`, 10, 95);
 
     // Render level up UI
     if (this.levelUpUI.isActive()) {

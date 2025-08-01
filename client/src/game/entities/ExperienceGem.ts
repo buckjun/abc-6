@@ -7,7 +7,7 @@ export class ExperienceGem {
   private color: string;
   private alive: boolean = true;
   private magnetRange: number = 80;
-  private magnetSpeed: number = 200;
+  private magnetSpeed: number = 600;
   private attractedToPlayer: boolean = false;
   private pulseTime: number = 0;
 

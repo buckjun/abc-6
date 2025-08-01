@@ -1,8 +1,8 @@
 export class ExperienceBar {
-  private x: number = 20;
-  private y: number = 20;
-  private width: number = 300;
-  private height: number = 20;
+  private x: number = 0;
+  private y: number = 0;
+  private width: number = 0;
+  private height: number = 12;
   private currentExp: number = 0;
   private expToNext: number = 100;
   private level: number = 1;
@@ -16,45 +16,36 @@ export class ExperienceBar {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
+    // Set width to full screen width
+    this.width = ctx.canvas.width;
+    
     // Background
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.fillRect(this.x, this.y, this.width, this.height);
 
     // Border
     ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1;
     ctx.strokeRect(this.x, this.y, this.width, this.height);
 
     // Experience fill
     const expPercentage = this.currentExp / this.expToNext;
-    const fillWidth = (this.width - 4) * expPercentage;
+    const fillWidth = (this.width - 2) * expPercentage;
     
     // Gradient fill
-    const gradient = ctx.createLinearGradient(this.x + 2, this.y + 2, this.x + 2 + fillWidth, this.y + 2);
+    const gradient = ctx.createLinearGradient(this.x + 1, this.y + 1, this.x + 1 + fillWidth, this.y + 1);
     gradient.addColorStop(0, '#00FF00');
     gradient.addColorStop(0.5, '#66FF66');
     gradient.addColorStop(1, '#00CC00');
     
     ctx.fillStyle = gradient;
-    ctx.fillRect(this.x + 2, this.y + 2, fillWidth, this.height - 4);
+    ctx.fillRect(this.x + 1, this.y + 1, fillWidth, this.height - 2);
 
-    // Level text
+    // Level text (small, at left edge)
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 14px Arial';
+    ctx.font = 'bold 10px Arial';
     ctx.textAlign = 'left';
-    ctx.fillText(`Level ${this.level}`, this.x, this.y - 5);
-
-    // Experience text
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(`${this.currentExp} / ${this.expToNext}`, this.x + this.width / 2, this.y + this.height / 2 + 4);
-
-    // Next level text
-    ctx.fillStyle = '#CCCCCC';
-    ctx.font = '10px Arial';
-    ctx.textAlign = 'right';
-    ctx.fillText(`Next: Lv${this.level + 1}`, this.x + this.width, this.y - 5);
+    ctx.fillText(`Lv.${this.level}`, this.x + 5, this.y + 9);
   }
 
   // Animate level up effect
