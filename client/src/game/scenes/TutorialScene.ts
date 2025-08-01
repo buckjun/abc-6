@@ -530,40 +530,48 @@ export class TutorialScene implements Scene {
   render(ctx: CanvasRenderingContext2D): void {
     const canvas = this.game.getCanvas();
     
-    // Modern battlefield background
-    ctx.fillStyle = '#2C1810'; // Dark brown base
+    // Clean arena background with high contrast
+    ctx.fillStyle = '#1A1A2E'; // Dark navy base for better contrast
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Battle-worn terrain pattern
-    ctx.strokeStyle = '#4A3B2F';
-    ctx.lineWidth = 2;
-    for (let x = 0; x < canvas.width; x += 80) {
-      for (let y = 0; y < canvas.height; y += 80) {
-        // Random battle scars/cracks
-        if (Math.sin(x * 0.01) * Math.cos(y * 0.01) > 0.3) {
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-          ctx.lineTo(x + 20 + Math.sin(x) * 10, y + 20 + Math.cos(y) * 10);
-          ctx.stroke();
-        }
-      }
+    // Subtle grid pattern for better visibility
+    ctx.strokeStyle = '#16213E';
+    ctx.lineWidth = 1;
+    const gridSize = 100;
+    for (let x = 0; x <= canvas.width; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= canvas.height; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
     }
 
-    // Ambient lighting effect
-    const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width/2);
-    gradient.addColorStop(0, 'rgba(255, 165, 0, 0.1)'); // Orange glow center
-    gradient.addColorStop(0.5, 'rgba(139, 69, 19, 0.05)'); // Brown mid
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)'); // Dark edges
-    ctx.fillStyle = gradient;
+    // Central arena lighting for clear visibility
+    const arenaGradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width/2);
+    arenaGradient.addColorStop(0, 'rgba(100, 149, 237, 0.08)'); // Light blue center
+    arenaGradient.addColorStop(0.7, 'rgba(72, 61, 139, 0.04)'); // Purple mid
+    arenaGradient.addColorStop(1, 'rgba(25, 25, 112, 0.02)'); // Dark blue edges
+    ctx.fillStyle = arenaGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Battle debris (rocks/stones)
-    ctx.fillStyle = '#696969';
-    for (let i = 0; i < 15; i++) {
-      const x = (i * 137 + 50) % canvas.width;
-      const y = (i * 97 + 100) % canvas.height;
-      ctx.fillRect(x, y, 8 + (i % 4), 6 + (i % 3));
-    }
+    // Corner markers for arena boundaries
+    ctx.fillStyle = '#4682B4';
+    const cornerSize = 20;
+    // Top corners
+    ctx.fillRect(0, 0, cornerSize, 4);
+    ctx.fillRect(0, 0, 4, cornerSize);
+    ctx.fillRect(canvas.width - cornerSize, 0, cornerSize, 4);
+    ctx.fillRect(canvas.width - 4, 0, 4, cornerSize);
+    // Bottom corners
+    ctx.fillRect(0, canvas.height - 4, cornerSize, 4);
+    ctx.fillRect(0, canvas.height - cornerSize, 4, cornerSize);
+    ctx.fillRect(canvas.width - cornerSize, canvas.height - 4, cornerSize, 4);
+    ctx.fillRect(canvas.width - 4, canvas.height - cornerSize, 4, cornerSize);
     
     // Render game objects
     this.areaEffects.forEach(effect => effect.render(ctx));

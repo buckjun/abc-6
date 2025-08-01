@@ -8,8 +8,8 @@ export class SacredGround extends WeaponBase {
 
   constructor() {
     const initialStats: WeaponStats = {
-      damage: 8, // Increased damage for balanced gameplay (bats 1 hit, goblins 2 hits, mid-tier 3 hits)
-      cooldown: 0.33, // Attack every 0.33 seconds for balanced hit rate
+      damage: 3, // Reduced damage for better balance (enemies take multiple hits)
+      cooldown: 2.0, // Increased cooldown from 0.33 to 2.0 seconds for lower hit frequency
       projectileCount: 1,
       radius: 80,
       duration: Infinity // Permanent around player
@@ -49,22 +49,22 @@ export class SacredGround extends WeaponBase {
         this.stats.radius = 100;
         break;
       case 3:
-        this.stats.damage = 8;
+        this.stats.damage = 4; // Gradual damage increase
         break;
       case 4:
         this.stats.radius = 120;
         break;
       case 5:
-        this.stats.damage = 12;
+        this.stats.damage = 5;
         break;
       case 6:
         this.stats.radius = 150;
         break;
       case 7:
-        this.stats.damage = 18;
+        this.stats.damage = 7;
         break;
       case 8:
-        this.stats.damage = 25;
+        this.stats.damage = 10; // Reduced from 25 to 10
         this.stats.radius = 180;
         break;
     }
