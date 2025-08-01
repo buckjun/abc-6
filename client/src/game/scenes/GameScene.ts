@@ -3,6 +3,8 @@ import type { Game } from '../Game';
 import { Player } from '../entities/Player';
 import { Enemy } from '../entities/Enemy';
 import { Bullet } from '../entities/Bullet';
+import { AreaEffect } from '../entities/AreaEffect';
+import { WeaponManager } from '../managers/WeaponManager';
 import { GameUtils } from '../utils/GameUtils';
 
 export class GameScene implements Scene {
@@ -10,15 +12,19 @@ export class GameScene implements Scene {
   private player: Player;
   private enemies: Enemy[] = [];
   private bullets: Bullet[] = [];
+  private areaEffects: AreaEffect[] = [];
+  private weaponManager: WeaponManager;
   private gameTime: number = 0;
   private spawnTimer: number = 0;
   private spawnInterval: number = 2.0; // seconds
-  private shootTimer: number = 0;
-  private shootInterval: number = 0.5; // seconds (500ms)
+  private playerLevel: number = 1;
+  private experience: number = 0;
+  private experienceToNext: number = 100;
 
   constructor(game: Game) {
     this.game = game;
     this.player = new Player(640, 360); // Center of screen
+    this.weaponManager = new WeaponManager();
   }
 
   init(): void {
@@ -30,9 +36,17 @@ export class GameScene implements Scene {
     // Reset game state
     this.gameTime = 0;
     this.spawnTimer = 0;
-    this.shootTimer = 0;
     this.enemies = [];
     this.bullets = [];
+    this.areaEffects = [];
+    this.playerLevel = 1;
+    this.experience = 0;
+    this.experienceToNext = 100;
+    
+    // Setup initial weapons
+    this.weaponManager.addWeapon('마력 구체');
+    this.weaponManager.addWeapon('수리검');
+    this.weaponManager.addWeapon('신성한 영역');
     
     // Initialize UI scene
     const uiScene = this.game.getScene('ui');
@@ -67,33 +81,26 @@ export class GameScene implements Scene {
   update(deltaTime: number): void {
     this.gameTime += deltaTime;
     this.spawnTimer += deltaTime;
-    this.shootTimer += deltaTime;
 
     // Update game data
     this.game.setGameData({
       time: Math.floor(this.gameTime),
-      health: this.player.getHealth()
+      health: this.player.getHealth(),
+      level: this.playerLevel,
+      experience: this.experience,
+      experienceToNext: this.experienceToNext
     });
 
-    // Handle player input and update
-    this.handlePlayerInput();
-    this.player.update(deltaTime);
+    // Handle player movement
+    this.handlePlayerMovement(deltaTime);
 
-    // Automatic shooting system
-    if (this.shootTimer >= this.shootInterval) {
-      this.shootAtNearestEnemy();
-      this.shootTimer = 0;
-    }
+    // Update player
+    this.player.update(deltaTime);
 
     // Spawn enemies
     if (this.spawnTimer >= this.spawnInterval) {
       this.spawnEnemy();
       this.spawnTimer = 0;
-      
-      // Increase difficulty over time
-      if (this.spawnInterval > 0.5) {
-        this.spawnInterval *= 0.99;
-      }
     }
 
     // Update enemies
@@ -106,12 +113,39 @@ export class GameScene implements Scene {
       bullet.update(deltaTime);
     });
 
-    // Check collisions
-    this.checkCollisions();
+    // Update area effects
+    this.areaEffects.forEach(effect => {
+      effect.update(deltaTime);
+      const damagedEnemies = effect.applyDamage(this.enemies);
+      // Award experience for area effect damage
+      this.experience += damagedEnemies.length * 5;
+    });
 
-    // Remove dead enemies and bullets
-    this.enemies = this.enemies.filter(enemy => enemy.isAlive());
-    this.bullets = this.bullets.filter(bullet => bullet.isAlive());
+    // Update weapons and get new projectiles
+    const mousePos = this.game.getInputManager().getMousePosition();
+    const { bullets: newBullets, areaEffects: newAreaEffects } = this.weaponManager.update(
+      deltaTime, 
+      this.player, 
+      this.enemies, 
+      mousePos.x, 
+      mousePos.y
+    );
+    
+    // Add new projectiles to arrays
+    this.bullets.push(...newBullets);
+    this.areaEffects.push(...newAreaEffects);
+
+    // Check bullet-enemy collisions
+    this.checkBulletEnemyCollisions();
+
+    // Check player-enemy collisions
+    this.checkPlayerEnemyCollisions();
+
+    // Check level up
+    this.checkLevelUp();
+
+    // Remove dead objects
+    this.removeDeadObjects();
 
     // Update UI scene
     const uiScene = this.game.getScene('ui');
@@ -125,7 +159,7 @@ export class GameScene implements Scene {
     }
   }
 
-  private handlePlayerInput(): void {
+  private handlePlayerMovement(deltaTime: number): void {
     const inputManager = this.game.getInputManager();
     let moveX = 0;
     let moveY = 0;
@@ -152,32 +186,31 @@ export class GameScene implements Scene {
     this.player.setMovement(moveX, moveY);
   }
 
-  private shootAtNearestEnemy(): void {
-    if (this.enemies.length === 0) return;
-
-    const playerPos = this.player.getPosition();
-    let nearestEnemy: Enemy | null = null;
-    let shortestDistance = Infinity;
-
-    // Find the closest enemy using distance calculation
-    this.enemies.forEach((enemy: Enemy) => {
-      const enemyPos = enemy.getPosition();
-      const distance = GameUtils.distance(playerPos.x, playerPos.y, enemyPos.x, enemyPos.y);
+  private checkLevelUp(): void {
+    if (this.experience >= this.experienceToNext) {
+      this.playerLevel++;
+      this.experience -= this.experienceToNext;
+      this.experienceToNext = Math.floor(this.experienceToNext * 1.2); // Increase requirement
       
-      if (distance < shortestDistance) {
-        shortestDistance = distance;
-        nearestEnemy = enemy;
+      console.log(`Level up! Now level ${this.playerLevel}`);
+      this.showLevelUpOptions();
+    }
+  }
+
+  private showLevelUpOptions(): void {
+    const options = this.weaponManager.getUpgradeOptions();
+    if (options.length > 0) {
+      // For now, auto-select the first option
+      // TODO: Show UI for player to choose
+      const selectedOption = options[0];
+      
+      if (['마력 구체', '수리검', '신성한 영역'].includes(selectedOption)) {
+        this.weaponManager.addWeapon(selectedOption);
+      } else {
+        this.weaponManager.addPassiveItem(selectedOption);
       }
-    });
-
-    // Create and shoot bullet at nearest enemy
-    if (nearestEnemy) {
-      const enemyPos = nearestEnemy.getPosition();
-      const bullet = new Bullet(playerPos.x, playerPos.y, enemyPos.x, enemyPos.y);
-      bullet.init();
-      this.bullets.push(bullet);
       
-      console.log(`Shooting at enemy at distance: ${shortestDistance.toFixed(2)}`);
+      console.log(`Auto-selected upgrade: ${selectedOption}`);
     }
   }
 
@@ -210,11 +243,45 @@ export class GameScene implements Scene {
     this.enemies.push(enemy);
   }
 
-  private checkCollisions(): void {
+  private checkBulletEnemyCollisions(): void {
+    this.bullets.forEach(bullet => {
+      if (!bullet.isAlive()) return;
+      
+      const bulletBounds = bullet.getBounds();
+      
+      this.enemies.forEach(enemy => {
+        if (!enemy.isAlive()) return;
+        
+        const enemyBounds = enemy.getBounds();
+        
+        if (GameUtils.isColliding(bulletBounds, enemyBounds)) {
+          // Damage enemy
+          enemy.takeDamage(bullet.getDamage());
+          this.experience += 10; // Award experience for hit
+          
+          // Destroy bullet unless it's penetrating
+          if (!bullet.isPenetrating()) {
+            bullet.destroy();
+          }
+          
+          this.game.getAudioManager().playSound('/sounds/hit.mp3');
+          console.log(`Enemy hit by bullet for ${bullet.getDamage()} damage`);
+          
+          // Check for chain lightning if evolved Magic Bolt
+          if (bullet.getColor() === '#4A90E2') {
+            this.checkChainLightning(enemy, bullet.getDamage());
+          }
+        }
+      });
+    });
+  }
+
+  private checkPlayerEnemyCollisions(): void {
     const playerBounds = this.player.getBounds();
 
-    // Player-Enemy collisions
     this.enemies.forEach(enemy => {
+      if (!enemy.isAlive()) return;
+      
       const enemyBounds = enemy.getBounds();
       
       if (GameUtils.isColliding(playerBounds, enemyBounds)) {
@@ -224,23 +291,36 @@ export class GameScene implements Scene {
         this.game.getAudioManager().playSound('/sounds/hit.mp3');
       }
     });
+  }
 
-    // Bullet-Enemy collisions
-    this.bullets.forEach(bullet => {
-      const bulletBounds = bullet.getBounds();
+  private checkChainLightning(hitEnemy: Enemy, damage: number): void {
+    // Find nearby enemies for chain lightning
+    const hitPos = hitEnemy.getPosition();
+    const chainTargets: Enemy[] = [];
+    
+    this.enemies.forEach(enemy => {
+      if (enemy === hitEnemy || !enemy.isAlive()) return;
       
-      this.enemies.forEach(enemy => {
-        const enemyBounds = enemy.getBounds();
-        
-        if (bullet.isAlive() && enemy.isAlive() && GameUtils.isColliding(bulletBounds, enemyBounds)) {
-          // Destroy both bullet and enemy
-          bullet.destroy();
-          enemy.destroy();
-          this.game.getAudioManager().playSound('/sounds/hit.mp3');
-          console.log(`Enemy hit by bullet at (${bulletBounds.x}, ${bulletBounds.y})`);
-        }
-      });
+      const enemyPos = enemy.getPosition();
+      const distance = GameUtils.distance(hitPos.x, hitPos.y, enemyPos.x, enemyPos.y);
+      
+      if (distance <= 150 && chainTargets.length < 3) { // Chain to max 3 enemies within 150px
+        chainTargets.push(enemy);
+      }
     });
+    
+    // Apply chain damage
+    chainTargets.forEach(enemy => {
+      enemy.takeDamage(Math.floor(damage * 0.7)); // 70% of original damage
+      this.experience += 5;
+      console.log('Chain lightning hit enemy!');
+    });
+  }
+
+  private removeDeadObjects(): void {
+    this.enemies = this.enemies.filter(enemy => enemy.isAlive());
+    this.bullets = this.bullets.filter(bullet => bullet.isAlive());
+    this.areaEffects = this.areaEffects.filter(effect => effect.isActive());
   }
 
   private gameOver(): void {
@@ -271,6 +351,11 @@ export class GameScene implements Scene {
       ctx.lineTo(canvas.width, y);
       ctx.stroke();
     }
+
+    // Render area effects (behind everything)
+    this.areaEffects.forEach(effect => {
+      effect.render(ctx);
+    });
 
     // Render player
     this.player.render(ctx);

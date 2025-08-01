@@ -1,3 +1,5 @@
+import type { Enemy } from './Enemy';
+
 export class Bullet {
   private x: number;
   private y: number;
@@ -8,6 +10,11 @@ export class Bullet {
   private directionY: number;
   private alive: boolean = true;
   private id: string;
+  private damage: number = 10;
+  private color: string = '#FFD700';
+  private penetrating: boolean = false;
+  private homing: boolean = false;
+  private target: Enemy | null = null;
 
   constructor(x: number, y: number, targetX: number, targetY: number) {
     this.x = x;
@@ -37,6 +44,19 @@ export class Bullet {
   update(deltaTime: number): void {
     if (!this.alive) return;
 
+    // Homing behavior
+    if (this.homing && this.target && this.target.isAlive()) {
+      const targetPos = this.target.getPosition();
+      const dx = targetPos.x - this.x;
+      const dy = targetPos.y - this.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance > 0) {
+        this.directionX = dx / distance;
+        this.directionY = dy / distance;
+      }
+    }
+
     // Move bullet in direction
     this.x += this.directionX * this.speed * deltaTime;
     this.y += this.directionY * this.speed * deltaTime;
@@ -50,8 +70,8 @@ export class Bullet {
   render(ctx: CanvasRenderingContext2D): void {
     if (!this.alive) return;
 
-    // Bullet body - bright yellow projectile
-    ctx.fillStyle = '#FFD700';
+    // Bullet body
+    ctx.fillStyle = this.color;
     ctx.fillRect(
       this.x - this.width / 2,
       this.y - this.height / 2,
@@ -60,7 +80,7 @@ export class Bullet {
     );
 
     // Bullet border for visibility
-    ctx.strokeStyle = '#FFA500';
+    ctx.strokeStyle = this.getBorderColor();
     ctx.lineWidth = 1;
     ctx.strokeRect(
       this.x - this.width / 2,
@@ -70,13 +90,31 @@ export class Bullet {
     );
 
     // Add a small glow effect
-    ctx.fillStyle = '#FFFF00';
+    ctx.fillStyle = this.getGlowColor();
     ctx.fillRect(
       this.x - 2,
       this.y - 2,
       4,
       4
     );
+  }
+
+  private getBorderColor(): string {
+    switch (this.color) {
+      case '#4A90E2': return '#2171B5'; // Magic bolt
+      case '#C0C0C0': return '#808080'; // Shuriken
+      case '#FFD700': return '#FFA500'; // Golden blade
+      default: return '#FFA500';
+    }
+  }
+
+  private getGlowColor(): string {
+    switch (this.color) {
+      case '#4A90E2': return '#87CEEB'; // Light blue
+      case '#C0C0C0': return '#FFFFFF'; // White
+      case '#FFD700': return '#FFFF00'; // Bright yellow
+      default: return '#FFFF00';
+    }
   }
 
   destroy(): void {
@@ -102,5 +140,50 @@ export class Bullet {
 
   getPosition(): { x: number; y: number } {
     return { x: this.x, y: this.y };
+  }
+
+  // Weapon system methods
+  setDamage(damage: number): void {
+    this.damage = damage;
+  }
+
+  getDamage(): number {
+    return this.damage;
+  }
+
+  setSpeed(speed: number): void {
+    this.speed = speed;
+  }
+
+  setColor(color: string): void {
+    this.color = color;
+  }
+
+  getColor(): string {
+    return this.color;
+  }
+
+  setPenetrating(penetrating: boolean): void {
+    this.penetrating = penetrating;
+  }
+
+  isPenetrating(): boolean {
+    return this.penetrating;
+  }
+
+  setHoming(homing: boolean): void {
+    this.homing = homing;
+  }
+
+  isHoming(): boolean {
+    return this.homing;
+  }
+
+  setTarget(target: Enemy): void {
+    this.target = target;
+  }
+
+  getTarget(): Enemy | null {
+    return this.target;
   }
 }

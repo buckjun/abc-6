@@ -42,6 +42,7 @@ export class Game {
     
     // Initialize managers
     this.inputManager = new InputManager();
+    this.inputManager.setCanvas(this.canvas);
     this.audioManager = new AudioManager();
     
     this.init();
