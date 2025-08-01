@@ -155,4 +155,13 @@ export class AreaEffect {
   destroy(): void {
     this.active = false;
   }
+
+  isInArea(x: number, y: number): boolean {
+    const distance = Math.sqrt((x - this.x) ** 2 + (y - this.y) ** 2);
+    return distance <= this.radius;
+  }
+
+  getDamage(): number {
+    return this.damage;
+  }
 }

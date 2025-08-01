@@ -70,6 +70,11 @@ export class Player {
     console.log(`Player took ${damage} damage. Health: ${this.health}`);
   }
 
+  heal(amount: number): void {
+    this.health = Math.min(100, this.health + amount); // Max health is 100
+    console.log(`Player healed ${amount}. Health: ${this.health}`);
+  }
+
   getHealth(): number {
     return this.health;
   }

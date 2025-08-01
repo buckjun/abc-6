@@ -406,7 +406,7 @@ export class GameScene implements Scene {
       // Heal player to full health
       const currentHealth = this.player.getHealth();
       const healAmount = 100 - currentHealth; // Assuming max health is 100
-      this.player.damage(-healAmount); // Negative damage = healing
+      this.player.heal(healAmount);
       console.log('Player healed to full health!');
     } else if (option.id === 'special_magnet') {
       this.hasExperienceMagnet = true;
@@ -418,7 +418,7 @@ export class GameScene implements Scene {
     switch (passiveName) {
       case '체력 증가':
         // Heal player as a simple health increase
-        this.player.damage(-20); // Negative damage = healing
+        this.player.heal(20);
         console.log('Max health increased!');
         break;
       case '이동속도':
@@ -486,7 +486,7 @@ export class GameScene implements Scene {
   private applyTreasureReward(reward: string): void {
     switch (reward) {
       case '체력 회복':
-        this.player.damage(-50); // Negative damage = healing
+        this.player.heal(50);
         break;
       case '경험치 자석':
         this.hasExperienceMagnet = true;
@@ -516,14 +516,14 @@ export class GameScene implements Scene {
   }
 
   private dropExperienceGem(x: number, y: number, baseValue: number): void {
-    // Drop different gem types based on value
+    // Use updated gem values based on enemy type
     let gemValue = baseValue;
     if (baseValue >= 50) {
-      gemValue = 50; // Blue gem
+      gemValue = 100; // Blue gem (updated from 50 to 100)
     } else if (baseValue >= 25) {
-      gemValue = 25; // Purple gem  
+      gemValue = 50; // Purple gem (updated from 25 to 50)
     } else {
-      gemValue = 10; // Yellow gem
+      gemValue = 25; // Yellow gem (updated from 10 to 25)
     }
     
     const gem = new ExperienceGem(x, y, gemValue);
@@ -541,18 +541,22 @@ export class GameScene implements Scene {
     this.areaEffects.forEach(effect => {
       // Apply damage to old enemies
       const damagedOldEnemies = effect.applyDamage(this.enemies);
-      this.experience += damagedOldEnemies.length * 5;
+      // No experience from area effects, only from gems
       
-      // Apply damage to new enemies (convert to Enemy[] format for compatibility)
-      const newEnemiesForEffect = this.newEnemies.map(enemy => ({
-        ...enemy,
-        baseSpeed: 50, // Default speed
-        getHealth: () => enemy.getHealth ? enemy.getHealth() : 100,
-        getMaxHealth: () => 100
-      } as Enemy));
-      
-      const damagedNewEnemies = effect.applyDamage(newEnemiesForEffect);
-      this.experience += damagedNewEnemies.length * 5;
+      // Apply damage to new enemies directly without conversion
+      this.newEnemies.forEach(enemy => {
+        if (!enemy.isAlive()) return;
+        
+        const enemyBounds = enemy.getBounds();
+        if (effect.isInArea(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2)) {
+          enemy.takeDamage(effect.getDamage());
+          
+          // Drop experience gem when enemy dies
+          if (!enemy.isAlive()) {
+            this.dropExperienceGem(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2, enemy.getExperienceValue());
+          }
+        }
+      });
     });
   }
 
