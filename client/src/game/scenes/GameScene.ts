@@ -399,9 +399,11 @@ export class GameScene implements Scene {
     } else if (option.id.startsWith('new_')) {
       const weaponName = option.id.replace('new_', '');
       this.weaponManager.addWeapon(weaponName);
+      console.log(`New weapon added: ${weaponName}`);
     } else if (option.id.startsWith('passive_')) {
       const passiveName = option.id.replace('passive_', '');
       this.applyPassiveBonus(passiveName);
+      console.log(`Passive applied: ${passiveName}`);
     } else if (option.id === 'special_heal') {
       // Heal player to full health
       const currentHealth = this.player.getHealth();
@@ -804,7 +806,7 @@ export class GameScene implements Scene {
         if (GameUtils.isColliding(bulletBounds, enemyBounds)) {
           // Damage enemy
           enemy.takeDamage(bullet.getDamage());
-          this.experience += 10; // Award experience for hit
+          // No experience for hitting, only from gems
           
           // Destroy bullet unless it's penetrating
           if (!bullet.isPenetrating()) {
@@ -830,7 +832,7 @@ export class GameScene implements Scene {
         if (GameUtils.isColliding(bulletBounds, enemyBounds)) {
           // Damage enemy
           enemy.takeDamage(bullet.getDamage());
-          this.experience += enemy.getExperienceValue() / 2; // Award experience for hit
+          // No experience for hitting, only from gems
           
           // Destroy bullet unless it's penetrating
           if (!bullet.isPenetrating()) {
@@ -996,14 +998,14 @@ export class GameScene implements Scene {
     // Render experience bar first (at very top)
     this.experienceBar.render(ctx);
 
-    // Render UI (moved down to avoid overlap with experience bar)
+    // Render UI (moved further down to avoid overlap with experience bar)
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '16px Arial';
     ctx.textAlign = 'left';
-    ctx.fillText(`Level: ${this.playerLevel}`, 10, 35);
-    ctx.fillText(`Health: ${this.player.getHealth()}`, 10, 55);
-    ctx.fillText(`Time: ${Math.floor(this.gameTime)}s`, 10, 75);
-    ctx.fillText(`Enemies: ${this.enemies.length + this.newEnemies.length}`, 10, 95);
+    ctx.fillText(`Level: ${this.playerLevel}`, 10, 50);
+    ctx.fillText(`Health: ${this.player.getHealth()}`, 10, 70);
+    ctx.fillText(`Time: ${Math.floor(this.gameTime)}s`, 10, 90);
+    ctx.fillText(`Enemies: ${this.enemies.length + this.newEnemies.length}`, 10, 110);
 
     // Render level up UI
     if (this.levelUpUI.isActive()) {

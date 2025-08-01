@@ -3,8 +3,8 @@ import type { Enemy } from './Enemy';
 export class Bullet {
   private x: number;
   private y: number;
-  private width: number = 6;
-  private height: number = 6;
+  private width: number = 10;  // Increased from 6 for better hit rate
+  private height: number = 10; // Increased from 6 for better hit rate
   private speed: number = 400; // pixels per second
   private directionX: number;
   private directionY: number;

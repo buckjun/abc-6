@@ -6,6 +6,28 @@ This is a web-based game application called "Auto-Slayer" built with a modern fu
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Changes (January 2025)
+
+## UI Layout Improvements
+- Moved experience bar to very top of screen (full width, visual progress only)
+- Moved character status display down to avoid overlap with experience bar
+- Experience bar shows only progress visualization for user estimation
+
+## Experience System Adjustments
+- Experience now only obtainable from gems (removed hit-based experience)
+- Increased experience gem values: Yellow=25xp, Purple=50xp, Blue=100xp (previously 10/25/50)
+- Increased gem collection speed from 200 to 600 for faster pickup
+
+## Combat Balance Improvements
+- Increased bullet size from 6x6 to 10x10 pixels for better hit rates
+- Increased enemy sizes: Slime 28→35px, Bat 24x20→30x26px, Skeleton 30x36→36x42px
+- Applied bullet hell design principles: generous player offense, better hit detection
+
+## Level-up System Fixes
+- Added detailed logging for weapon upgrades and passive applications
+- Fixed weapon levelUp method calls for proper upgrade progression
+- Enhanced reward selection debugging for better user feedback
+
 # System Architecture
 
 ## Frontend Architecture

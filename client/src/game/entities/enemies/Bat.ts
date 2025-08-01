@@ -9,8 +9,8 @@ export class Bat extends EnemyBase {
     this.color = '#4A0080';
     this.damage = 6;
     this.experienceValue = 8;
-    this.width = 24;
-    this.height = 20;
+    this.width = 30;  // Increased from 24 for better hit rate
+    this.height = 26;  // Increased from 20 for better hit rate
     this.waveOffset = Math.random() * Math.PI * 2;
   }
 

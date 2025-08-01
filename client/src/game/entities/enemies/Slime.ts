@@ -6,8 +6,8 @@ export class Slime extends EnemyBase {
     this.color = '#00AA00';
     this.damage = 8;
     this.experienceValue = 5;
-    this.width = 28;
-    this.height = 28;
+    this.width = 35;  // Increased from 28 for better hit rate
+    this.height = 35; // Increased from 28 for better hit rate
   }
 
   init(): void {

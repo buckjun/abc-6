@@ -10,8 +10,8 @@ export class SkeletonSoldier extends EnemyBase {
     this.color = '#CCCCCC';
     this.damage = 15;
     this.experienceValue = 15;
-    this.width = 30;
-    this.height = 36;
+    this.width = 36;  // Increased from 30 for better hit rate
+    this.height = 42;  // Increased from 36 for better hit rate
     this.formationId = formationId;
   }
 

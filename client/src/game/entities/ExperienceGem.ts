@@ -16,17 +16,17 @@ export class ExperienceGem {
     this.y = y;
     this.value = value;
     
-    // Set color and size based on value
-    if (value >= 50) {
-      this.color = '#0066FF'; // Blue for high value
+    // Set color and size based on value (updated for new values)
+    if (value >= 100) {
+      this.color = '#0066FF'; // Blue for high value (100+ xp)
       this.width = 16;
       this.height = 16;
-    } else if (value >= 25) {
-      this.color = '#9932CC'; // Purple for medium value
+    } else if (value >= 50) {
+      this.color = '#9932CC'; // Purple for medium value (50+ xp)
       this.width = 14;
       this.height = 14;
     } else {
-      this.color = '#FFD700'; // Yellow for low value
+      this.color = '#FFD700'; // Yellow for low value (25+ xp)
       this.width = 12;
       this.height = 12;
     }
