@@ -15,7 +15,7 @@ import { Ogre } from '../entities/enemies/Ogre';
 import { Reaper } from '../entities/enemies/Reaper';
 import { ExperienceGem } from '../entities/ExperienceGem';
 import { TreasureChest } from '../entities/TreasureChest';
-import { LevelUpUI, LevelUpOption } from '../ui/LevelUpUI';
+import { LevelUpOption } from '../ui/LevelUpUI';
 import { WaveManager } from '../managers/WaveManager';
 import { ExperienceBar } from '../ui/ExperienceBar';
 
@@ -30,7 +30,6 @@ export class GameScene implements Scene {
   private treasureChests: TreasureChest[] = [];
   private weaponManager: WeaponManager;
   private waveManager: WaveManager;
-  private levelUpUI: LevelUpUI;
   private experienceBar: ExperienceBar;
   private gameTime: number = 0;
   private spawnTimer: number = 0;
@@ -43,14 +42,25 @@ export class GameScene implements Scene {
   private reaperSpawned: boolean = false;
   private gamePaused: boolean = false;
   private hasExperienceMagnet: boolean = false;
+  
+  // Level up UI
+  private showLevelUpMenu: boolean = false;
+  private levelUpOptions: LevelUpOption[] = [];
+  private selectedOptionIndex: number = 0;
 
   constructor(game: Game) {
     this.game = game;
     this.player = new Player(640, 360); // Center of screen
     this.weaponManager = new WeaponManager();
     this.waveManager = new WaveManager();
-    this.levelUpUI = new LevelUpUI();
     this.experienceBar = new ExperienceBar();
+    
+    // Set up mouse click handler for level up menu
+    this.game.getInputManager().onCanvasClick((x, y) => {
+      if (this.showLevelUpMenu) {
+        this.handleLevelUpMenuClick(x, y);
+      }
+    });
   }
 
   init(): void {
@@ -111,34 +121,23 @@ export class GameScene implements Scene {
       this.game.switchScene('mainmenu');
     });
 
-    // Level up UI input handlers
-    inputManager.onKeyPress('Digit1', () => {
-      this.levelUpUI.handleKeyPress('1');
-    });
-    inputManager.onKeyPress('Digit2', () => {
-      this.levelUpUI.handleKeyPress('2');
-    });
-    inputManager.onKeyPress('Digit3', () => {
-      this.levelUpUI.handleKeyPress('3');
-    });
-    inputManager.onKeyPress('Digit4', () => {
-      this.levelUpUI.handleKeyPress('4');
-    });
-
-    // Mouse click handler for level up UI  
-    inputManager.onCanvasClick((x, y) => {
-      if (this.levelUpUI.isActive()) {
-        const canvas = this.game.getCanvas();
-        this.levelUpUI.handleClick(x, y, canvas.width, canvas.height);
-      }
-    });
+    // Level up UI input handlers - removed LevelUpUI dependency
   }
 
   update(deltaTime: number): void {
-    // Handle level up UI input
-    if (this.levelUpUI.isActive()) {
-      // Game is paused during level up
-      return;
+    // Handle level up menu interactions
+    if (this.showLevelUpMenu) {
+      // Check for number key inputs
+      if (this.game.getInputManager().isKeyPressed('1') && this.levelUpOptions.length >= 1) {
+        this.selectLevelUpOption(0);
+      } else if (this.game.getInputManager().isKeyPressed('2') && this.levelUpOptions.length >= 2) {
+        this.selectLevelUpOption(1);
+      } else if (this.game.getInputManager().isKeyPressed('3') && this.levelUpOptions.length >= 3) {
+        this.selectLevelUpOption(2);
+      } else if (this.game.getInputManager().isKeyPressed('4') && this.levelUpOptions.length >= 4) {
+        this.selectLevelUpOption(3);
+      }
+      return; // Game is paused during level up
     }
 
     if (this.gamePaused) return;
@@ -310,10 +309,9 @@ export class GameScene implements Scene {
   }
 
   private showLevelUpOptions(): void {
-    const options = this.generateLevelUpOptions();
-    this.levelUpUI.show(options, (selectedOption) => {
-      this.applyLevelUpReward(selectedOption);
-    });
+    this.levelUpOptions = this.generateLevelUpOptions();
+    this.showLevelUpMenu = true;
+    this.selectedOptionIndex = 0;
   }
 
   private generateLevelUpOptions(): LevelUpOption[] {
@@ -412,6 +410,38 @@ export class GameScene implements Scene {
     } else if (option.id === 'special_magnet') {
       this.hasExperienceMagnet = true;
       console.log('Experience magnet activated!');
+    }
+  }
+
+  private handleLevelUpMenuClick(x: number, y: number): void {
+    const canvas = this.game.getCanvas();
+    
+    // Use card-based layout like TutorialScene
+    const cardWidth = 200;
+    const cardHeight = 120;
+    const spacing = 20;
+    const totalWidth = this.levelUpOptions.length * cardWidth + (this.levelUpOptions.length - 1) * spacing;
+    const startX = (canvas.width - totalWidth) / 2;
+    const startY = (canvas.height - cardHeight) / 2;
+    
+    // Check which card was clicked
+    for (let i = 0; i < this.levelUpOptions.length; i++) {
+      const cardX = startX + i * (cardWidth + spacing);
+      
+      if (x >= cardX && x <= cardX + cardWidth &&
+          y >= startY && y <= startY + cardHeight) {
+        this.selectLevelUpOption(i);
+        break;
+      }
+    }
+  }
+
+  private selectLevelUpOption(index: number): void {
+    if (index >= 0 && index < this.levelUpOptions.length) {
+      const option = this.levelUpOptions[index];
+      this.applyLevelUpReward(option);
+      this.showLevelUpMenu = false;
+      this.levelUpOptions = [];
     }
   }
 
@@ -988,11 +1018,7 @@ export class GameScene implements Scene {
     // Render weapon images (synchronized with TutorialScene)
     this.renderWeaponImages(ctx);
 
-    // Render level up UI
-    if (this.levelUpUI.isActive()) {
-      const canvas = this.game.getCanvas();
-      this.levelUpUI.render(ctx, canvas.width, canvas.height);
-    }
+    // Level up UI is now handled in renderLevelUpMenu
 
     // Render bullets
     this.bullets.forEach(bullet => {
@@ -1003,6 +1029,11 @@ export class GameScene implements Scene {
     const uiScene = this.game.getScene('ui');
     if (uiScene) {
       uiScene.render(ctx);
+    }
+
+    // Render level up menu if active
+    if (this.showLevelUpMenu) {
+      this.renderLevelUpMenu(ctx);
     }
   }
 
@@ -1065,6 +1096,102 @@ export class GameScene implements Scene {
       case '번개': return '#FFFF00'; // Yellow
       default: return '#FFFFFF'; // White
     }
+  }
+
+  private renderLevelUpMenu(ctx: CanvasRenderingContext2D): void {
+    const canvas = this.game.getCanvas();
+    
+    // Light semi-transparent backdrop
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Use card-based layout like TutorialScene
+    const cardWidth = 200;
+    const cardHeight = 120;
+    const spacing = 20;
+    const totalWidth = this.levelUpOptions.length * cardWidth + (this.levelUpOptions.length - 1) * spacing;
+    const startX = (canvas.width - totalWidth) / 2;
+    const startY = (canvas.height - cardHeight) / 2;
+
+    // Title
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 32px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('LEVEL UP!', canvas.width / 2, startY - 40);
+
+    // Subtitle
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '18px "Courier New", monospace';
+    ctx.fillText('업그레이드를 선택하세요:', canvas.width / 2, startY - 10);
+
+    // Render options as cards
+    this.levelUpOptions.forEach((option, index) => {
+      const cardX = startX + index * (cardWidth + spacing);
+      
+      // Color-coded card background based on type
+      let bgColor = 'rgba(51, 51, 51, 0.9)';
+      let borderColor = '#666666';
+      if (option.type === 'weapon') {
+        bgColor = 'rgba(70, 130, 180, 0.8)'; // Steel blue for weapons
+        borderColor = '#4682B4';
+      } else if (option.id && option.id.startsWith('upgrade_')) {
+        bgColor = 'rgba(255, 165, 0, 0.8)'; // Orange for upgrades
+        borderColor = '#FFA500';
+      } else if (option.type === 'passive') {
+        bgColor = 'rgba(50, 205, 50, 0.8)'; // Lime green for passives
+        borderColor = '#32CD32';
+      } else if (option.type === 'special') {
+        bgColor = 'rgba(218, 165, 32, 0.8)'; // Gold for special items
+        borderColor = '#DAA520';
+      }
+      
+      // Card background
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(cardX, startY, cardWidth, cardHeight);
+      
+      // Card border
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cardX, startY, cardWidth, cardHeight);
+      
+      // Card number indicator
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 16px "Courier New", monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${index + 1}`, cardX + 10, startY + 20);
+      
+      // Option name
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 16px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(option.name, cardX + cardWidth / 2, startY + 45);
+      
+      // Option description (word wrap)
+      ctx.font = '12px "Courier New", monospace';
+      const words = option.description.split(' ');
+      let line = '';
+      let lineY = startY + 65;
+      
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > cardWidth - 20 && n > 0) {
+          ctx.fillText(line, cardX + cardWidth / 2, lineY);
+          line = words[n] + ' ';
+          lineY += 15;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, cardX + cardWidth / 2, lineY);
+    });
+
+    // Instructions
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '14px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('카드를 클릭하거나 숫자 키(1-4)를 눌러 선택하세요', canvas.width / 2, startY + cardHeight + 40);
   }
 
   destroy(): void {
