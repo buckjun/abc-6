@@ -324,6 +324,24 @@ export class GameScene implements Scene {
     // Available passive items
     const allPassives = ['체력 증가', '이동속도', '공격력', '경험치 획득', '쿨타임 감소', '관통력'];
     
+    // TEST MODE: For first level up, always provide new weapons
+    if (this.playerLevel === 2) {
+      // Force new weapons for testing
+      const availableNewWeapons = allWeapons.filter(weapon => !currentWeapons.includes(weapon));
+      availableNewWeapons.forEach(weapon => {
+        options.push({
+          id: `new_${weapon}`,
+          name: weapon,
+          description: `새로운 무기를 획득합니다`,
+          type: 'weapon'
+        });
+      });
+      
+      // Return only new weapon options for testing
+      return options.slice(0, 4);
+    }
+    
+    // Normal level up options for higher levels
     // Add weapon upgrades
     currentWeapons.forEach(weapon => {
       if (this.weaponManager.getWeaponLevel(weapon) < 8) {
