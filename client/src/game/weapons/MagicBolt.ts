@@ -24,21 +24,36 @@ export class MagicBolt extends WeaponBase {
     const dy = mouseY - playerPos.y;
     const baseAngle = Math.atan2(dy, dx);
     
-    // Create multiple projectiles if upgraded
+    // Create projectiles in perpendicular formation
     for (let i = 0; i < this.stats.projectileCount; i++) {
-      let angle = baseAngle;
+      let startX = playerPos.x;
+      let startY = playerPos.y;
       
-      // Spread projectiles if multiple
+      // For multiple projectiles, offset perpendicular to firing direction
       if (this.stats.projectileCount > 1) {
-        const spread = (Math.PI / 6) * (this.stats.projectileCount - 1); // 30 degrees total spread
-        angle = baseAngle - spread/2 + (spread / (this.stats.projectileCount - 1)) * i;
+        // Calculate perpendicular vector
+        const perpX = -dy; // Perpendicular to direction vector
+        const perpY = dx;
+        const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+        
+        if (perpLength > 0) {
+          const perpNormX = perpX / perpLength;
+          const perpNormY = perpY / perpLength;
+          
+          // Offset position: center projectiles around player
+          const spacing = 40; // Distance between projectiles
+          const offset = (i - (this.stats.projectileCount - 1) / 2) * spacing;
+          
+          startX = playerPos.x + perpNormX * offset;
+          startY = playerPos.y + perpNormY * offset;
+        }
       }
       
-      // Calculate target position far in the direction
-      const targetX = playerPos.x + Math.cos(angle) * 1000;
-      const targetY = playerPos.y + Math.sin(angle) * 1000;
+      // Calculate target position in original direction
+      const targetX = startX + dx * 10; // Use normalized direction
+      const targetY = startY + dy * 10;
       
-      const bullet = new Bullet(playerPos.x, playerPos.y, targetX, targetY);
+      const bullet = new Bullet(startX, startY, targetX, targetY);
       bullet.setDamage(this.stats.damage);
       bullet.setSpeed(300);
       bullet.setColor('#4A90E2'); // Blue magic color
@@ -55,25 +70,36 @@ export class MagicBolt extends WeaponBase {
   protected updateStats(): void {
     switch (this.level) {
       case 2:
-        this.stats.damage = 15;
-        break;
-      case 3:
+        this.stats.damage = 25;
         this.stats.projectileCount = 2;
         break;
+      case 3:
+        this.stats.damage = 30;
+        this.stats.projectileCount = 3;
+        break;
       case 4:
+        this.stats.damage = 35;
+        this.stats.projectileCount = 4;
         this.stats.cooldown = 1.0;
         break;
       case 5:
-        this.stats.damage = 25;
+        this.stats.damage = 40;
+        this.stats.projectileCount = 5;
         break;
       case 6:
-        this.stats.projectileCount = 3;
+        this.stats.damage = 45;
+        this.stats.projectileCount = 6;
+        this.stats.cooldown = 0.9;
         break;
       case 7:
+        this.stats.damage = 50;
+        this.stats.projectileCount = 7;
         this.stats.cooldown = 0.8;
         break;
       case 8:
-        this.stats.damage = 40;
+        this.stats.damage = 60;
+        this.stats.projectileCount = 8;
+        this.stats.cooldown = 0.7;
         break;
     }
   }

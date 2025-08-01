@@ -7,7 +7,7 @@ import { GameUtils } from '../utils/GameUtils';
 export class Shuriken extends WeaponBase {
   constructor() {
     const initialStats: WeaponStats = {
-      damage: 8,
+      damage: 11, // 8 * 1.4 = 11.2 rounded to 11
       cooldown: 1.5,
       projectileCount: 1
     };
@@ -36,25 +36,35 @@ export class Shuriken extends WeaponBase {
   protected updateStats(): void {
     switch (this.level) {
       case 2:
-        this.stats.damage = 12;
-        break;
-      case 3:
+        this.stats.damage = 15; // 11 * 1.4 ≈ 15
         this.stats.projectileCount = 2;
         break;
-      case 4:
-        this.stats.cooldown = 1.2;
-        break;
-      case 5:
-        this.stats.damage = 18;
-        break;
-      case 6:
+      case 3:
+        this.stats.damage = 21; // 15 * 1.4 = 21
         this.stats.projectileCount = 3;
         break;
+      case 4:
+        this.stats.damage = 29; // 21 * 1.4 ≈ 29
+        this.stats.projectileCount = 4;
+        this.stats.cooldown = 1.3;
+        break;
+      case 5:
+        this.stats.damage = 41; // 29 * 1.4 ≈ 41
+        this.stats.projectileCount = 5;
+        break;
+      case 6:
+        this.stats.damage = 57; // 41 * 1.4 ≈ 57
+        this.stats.projectileCount = 6;
+        this.stats.cooldown = 1.1;
+        break;
       case 7:
-        this.stats.cooldown = 1.0;
+        this.stats.damage = 80; // 57 * 1.4 = 80
+        this.stats.projectileCount = 7;
         break;
       case 8:
-        this.stats.damage = 28;
+        this.stats.damage = 112; // 80 * 1.4 = 112
+        this.stats.projectileCount = 8;
+        this.stats.cooldown = 1.0;
         break;
     }
   }
@@ -84,7 +94,7 @@ export class Shuriken extends WeaponBase {
       const bullet = new Bullet(playerPos.x, playerPos.y, enemyPos.x, enemyPos.y);
       bullet.setDamage(this.stats.damage);
       bullet.setSpeed(400);
-      bullet.setColor('#C0C0C0');
+      bullet.setColor('#FF4500'); // Orange-red shuriken color (different from ice arrow)
       bullet.setHoming(true);
       bullet.setTarget(enemy);
       bullet.init();
