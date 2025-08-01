@@ -2,15 +2,19 @@ import { Scene } from '../Game';
 import type { Game } from '../Game';
 import { Player } from '../entities/Player';
 import { Enemy } from '../entities/Enemy';
+import { Bullet } from '../entities/Bullet';
 import { GameUtils } from '../utils/GameUtils';
 
 export class GameScene implements Scene {
   private game: Game;
   private player: Player;
   private enemies: Enemy[] = [];
+  private bullets: Bullet[] = [];
   private gameTime: number = 0;
   private spawnTimer: number = 0;
   private spawnInterval: number = 2.0; // seconds
+  private shootTimer: number = 0;
+  private shootInterval: number = 0.5; // seconds (500ms)
 
   constructor(game: Game) {
     this.game = game;
@@ -26,7 +30,9 @@ export class GameScene implements Scene {
     // Reset game state
     this.gameTime = 0;
     this.spawnTimer = 0;
+    this.shootTimer = 0;
     this.enemies = [];
+    this.bullets = [];
     
     // Initialize UI scene
     const uiScene = this.game.getScene('ui');
@@ -61,6 +67,7 @@ export class GameScene implements Scene {
   update(deltaTime: number): void {
     this.gameTime += deltaTime;
     this.spawnTimer += deltaTime;
+    this.shootTimer += deltaTime;
 
     // Update game data
     this.game.setGameData({
@@ -71,6 +78,12 @@ export class GameScene implements Scene {
     // Handle player input and update
     this.handlePlayerInput();
     this.player.update(deltaTime);
+
+    // Automatic shooting system
+    if (this.shootTimer >= this.shootInterval) {
+      this.shootAtNearestEnemy();
+      this.shootTimer = 0;
+    }
 
     // Spawn enemies
     if (this.spawnTimer >= this.spawnInterval) {
@@ -88,11 +101,17 @@ export class GameScene implements Scene {
       enemy.update(deltaTime, this.player);
     });
 
+    // Update bullets
+    this.bullets.forEach(bullet => {
+      bullet.update(deltaTime);
+    });
+
     // Check collisions
     this.checkCollisions();
 
-    // Remove dead enemies
+    // Remove dead enemies and bullets
     this.enemies = this.enemies.filter(enemy => enemy.isAlive());
+    this.bullets = this.bullets.filter(bullet => bullet.isAlive());
 
     // Update UI scene
     const uiScene = this.game.getScene('ui');
@@ -133,6 +152,35 @@ export class GameScene implements Scene {
     this.player.setMovement(moveX, moveY);
   }
 
+  private shootAtNearestEnemy(): void {
+    if (this.enemies.length === 0) return;
+
+    const playerPos = this.player.getPosition();
+    let nearestEnemy: Enemy | null = null;
+    let shortestDistance = Infinity;
+
+    // Find the closest enemy using distance calculation
+    this.enemies.forEach((enemy: Enemy) => {
+      const enemyPos = enemy.getPosition();
+      const distance = GameUtils.distance(playerPos.x, playerPos.y, enemyPos.x, enemyPos.y);
+      
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        nearestEnemy = enemy;
+      }
+    });
+
+    // Create and shoot bullet at nearest enemy
+    if (nearestEnemy) {
+      const enemyPos = nearestEnemy.getPosition();
+      const bullet = new Bullet(playerPos.x, playerPos.y, enemyPos.x, enemyPos.y);
+      bullet.init();
+      this.bullets.push(bullet);
+      
+      console.log(`Shooting at enemy at distance: ${shortestDistance.toFixed(2)}`);
+    }
+  }
+
   private spawnEnemy(): void {
     const canvas = this.game.getCanvas();
     const side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
@@ -165,6 +213,7 @@ export class GameScene implements Scene {
   private checkCollisions(): void {
     const playerBounds = this.player.getBounds();
 
+    // Player-Enemy collisions
     this.enemies.forEach(enemy => {
       const enemyBounds = enemy.getBounds();
       
@@ -174,6 +223,23 @@ export class GameScene implements Scene {
         enemy.destroy();
         this.game.getAudioManager().playSound('/sounds/hit.mp3');
       }
+    });
+
+    // Bullet-Enemy collisions
+    this.bullets.forEach(bullet => {
+      const bulletBounds = bullet.getBounds();
+      
+      this.enemies.forEach(enemy => {
+        const enemyBounds = enemy.getBounds();
+        
+        if (bullet.isAlive() && enemy.isAlive() && GameUtils.isColliding(bulletBounds, enemyBounds)) {
+          // Destroy both bullet and enemy
+          bullet.destroy();
+          enemy.destroy();
+          this.game.getAudioManager().playSound('/sounds/hit.mp3');
+          console.log(`Enemy hit by bullet at (${bulletBounds.x}, ${bulletBounds.y})`);
+        }
+      });
     });
   }
 
@@ -212,6 +278,11 @@ export class GameScene implements Scene {
     // Render enemies
     this.enemies.forEach(enemy => {
       enemy.render(ctx);
+    });
+
+    // Render bullets
+    this.bullets.forEach(bullet => {
+      bullet.render(ctx);
     });
 
     // Render UI overlay

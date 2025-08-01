@@ -94,4 +94,8 @@ export class Enemy {
       height: this.height
     };
   }
+
+  getPosition(): { x: number; y: number } {
+    return { x: this.x, y: this.y };
+  }
 }
