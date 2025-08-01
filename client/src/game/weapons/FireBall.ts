@@ -1,6 +1,7 @@
 import { WeaponBase, WeaponStats } from './WeaponBase';
 import { Player } from '../entities/Player';
-import { EnemyBase } from '../entities/EnemyBase';
+import { Enemy } from '../entities/Enemy';
+import { EnemyBase } from '../entities/enemies/EnemyBase';
 import { Bullet } from '../entities/Bullet';
 
 export class FireBall extends WeaponBase {
@@ -15,11 +16,11 @@ export class FireBall extends WeaponBase {
     this.canEvolve = true;
   }
 
-  protected fire(player: Player, enemies: EnemyBase[], mouseX: number, mouseY: number): Bullet[] {
+  protected fire(player: Player, enemies: (Enemy | EnemyBase)[], mouseX: number, mouseY: number): Bullet[] {
     const playerPos = player.getPosition();
     
     // Find closest enemy
-    let closestEnemy: EnemyBase | null = null;
+    let closestEnemy: (Enemy | EnemyBase) | null = null;
     let closestDistance = Infinity;
     
     enemies.forEach(enemy => {

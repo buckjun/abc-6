@@ -1,5 +1,6 @@
 import type { Player } from '../entities/Player';
 import type { Enemy } from '../entities/Enemy';
+import type { EnemyBase } from '../entities/enemies/EnemyBase';
 
 export interface WeaponStats {
   damage: number;
@@ -25,7 +26,7 @@ export abstract class WeaponBase {
     this.stats = { ...initialStats };
   }
 
-  public update(deltaTime: number, player: Player, enemies: Enemy[], mouseX: number, mouseY: number): any[] {
+  public update(deltaTime: number, player: Player, enemies: (Enemy | EnemyBase)[], mouseX: number, mouseY: number): any[] {
     this.cooldownTimer -= deltaTime;
     
     if (this.cooldownTimer <= 0) {
@@ -37,7 +38,7 @@ export abstract class WeaponBase {
     return [];
   }
 
-  protected abstract fire(player: Player, enemies: Enemy[], mouseX: number, mouseY: number): any[];
+  protected abstract fire(player: Player, enemies: (Enemy | EnemyBase)[], mouseX: number, mouseY: number): any[];
 
   public levelUp(): boolean {
     if (this.level >= this.maxLevel) return false;

@@ -230,10 +230,12 @@ export class GameScene implements Scene {
 
     // Update weapons and get new projectiles
     const mousePos = this.game.getInputManager().getMousePosition();
+    // Combine old enemies and new enemies for weapon targeting
+    const allEnemies = [...this.enemies, ...this.newEnemies];
     const { bullets: newBullets, areaEffects: newAreaEffects } = this.weaponManager.update(
       deltaTime, 
       this.player, 
-      this.enemies, 
+      allEnemies, 
       mousePos.x, 
       mousePos.y
     );

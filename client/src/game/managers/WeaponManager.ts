@@ -6,6 +6,7 @@ import { FireBall } from '../weapons/FireBall';
 import { IceArrow } from '../weapons/IceArrow';
 import { Player } from '../entities/Player';
 import { Enemy } from '../entities/Enemy';
+import { EnemyBase } from '../entities/enemies/EnemyBase';
 import { Bullet } from '../entities/Bullet';
 import { AreaEffect } from '../entities/AreaEffect';
 
@@ -80,7 +81,7 @@ export class WeaponManager {
     }
   }
 
-  public update(deltaTime: number, player: Player, enemies: Enemy[], mouseX: number, mouseY: number): { bullets: Bullet[], areaEffects: AreaEffect[] } {
+  public update(deltaTime: number, player: Player, enemies: (Enemy | EnemyBase)[], mouseX: number, mouseY: number): { bullets: Bullet[], areaEffects: AreaEffect[] } {
     const bullets: Bullet[] = [];
     const areaEffects: AreaEffect[] = [];
 
