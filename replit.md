@@ -1,0 +1,72 @@
+# Overview
+
+This is a web-based game application called "Auto-Slayer" built with a modern full-stack architecture. The frontend is a React-based game client featuring a custom canvas-based 2D game engine, while the backend is an Express.js server with PostgreSQL database support via Drizzle ORM. The game appears to be a survival-style game where players control a character that automatically engages enemies.
+
+# User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+# System Architecture
+
+## Frontend Architecture
+- **Framework**: React 18 with TypeScript and Vite for fast development and building
+- **Styling**: Tailwind CSS with custom design system using CSS variables for theming
+- **UI Components**: Comprehensive component library using Radix UI primitives with custom styling
+- **State Management**: Zustand for lightweight state management with stores for game state and audio controls
+- **Data Fetching**: TanStack Query for server state management with custom query client configuration
+- **Game Engine**: Custom canvas-based 2D game engine with scene management system
+
+## Game Engine Design
+- **Scene System**: Modular scene-based architecture (PreloadScene, MainMenuScene, GameScene, UIScene)
+- **Entity System**: Object-oriented entities (Player, Enemy) with update/render loops
+- **Manager Pattern**: Separate managers for Input, Audio, and game utilities
+- **Game Loop**: RequestAnimationFrame-based game loop with delta time calculations
+- **Asset Loading**: Asynchronous asset preloading system for audio and visual resources
+
+## Backend Architecture
+- **Framework**: Express.js with TypeScript for the REST API server
+- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
+- **Storage Pattern**: Abstracted storage interface supporting both memory and database implementations
+- **Middleware**: Custom logging middleware for API request tracking
+- **Development**: Vite integration for hot module replacement in development
+
+## Build and Development
+- **Module System**: ESNext modules throughout the stack
+- **Development Server**: Vite dev server with HMR and runtime error overlay
+- **Build Process**: Vite for frontend bundling, esbuild for backend compilation
+- **Type Safety**: Strict TypeScript configuration with shared types between client and server
+
+## Database Schema
+- **User Management**: Basic user system with username/password authentication
+- **Type Safety**: Drizzle-Zod integration for runtime schema validation
+- **Migrations**: Drizzle Kit for database schema management
+
+# External Dependencies
+
+## Core Framework Dependencies
+- **@neondatabase/serverless**: Serverless PostgreSQL driver for database connectivity
+- **drizzle-orm**: Type-safe ORM with PostgreSQL dialect support
+- **express**: Web application framework for the backend API
+- **react**: Frontend UI library with TypeScript support
+- **vite**: Build tool and development server
+
+## UI and Styling
+- **@radix-ui/***: Comprehensive set of accessible UI primitives for components
+- **tailwindcss**: Utility-first CSS framework with custom configuration
+- **@fontsource/inter**: Self-hosted Inter font family
+- **lucide-react**: Icon library for consistent iconography
+
+## Game Development
+- **@react-three/drei**: React Three.js utilities (included but not actively used)
+- **@react-three/fiber**: React renderer for Three.js (included but not actively used)
+- **vite-plugin-glsl**: GLSL shader support for future 3D features
+
+## State Management and Data
+- **zustand**: Lightweight state management solution
+- **@tanstack/react-query**: Server state management and caching
+- **zod**: Runtime type validation and schema definition
+
+## Development Tools
+- **drizzle-kit**: Database migration and schema management tool
+- **tsx**: TypeScript execution environment for development
+- **@replit/vite-plugin-runtime-error-modal**: Development error handling
