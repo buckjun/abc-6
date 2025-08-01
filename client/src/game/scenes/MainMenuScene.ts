@@ -3,8 +3,10 @@ import type { Game } from '../Game';
 
 export class MainMenuScene implements Scene {
   private game: Game;
-  private startButtonHover: boolean = false;
-  private startButtonBounds = { x: 540, y: 400, width: 200, height: 60 };
+  private tutorialButtonHover: boolean = false;
+  private infiniteButtonHover: boolean = false;
+  private tutorialButtonBounds = { x: 440, y: 350, width: 200, height: 60 };
+  private infiniteButtonBounds = { x: 440, y: 430, width: 200, height: 60 };
 
   constructor(game: Game) {
     this.game = game;
@@ -18,8 +20,8 @@ export class MainMenuScene implements Scene {
     this.game.getCanvas().addEventListener('mousemove', this.handleMouseMove);
     
     // Add keyboard listener
-    this.game.getInputManager().onKeyPress('Enter', () => this.startGame());
-    this.game.getInputManager().onKeyPress(' ', () => this.startGame());
+    this.game.getInputManager().onKeyPress('Enter', () => this.startTutorial());
+    this.game.getInputManager().onKeyPress(' ', () => this.startTutorial());
   }
 
   private handleClick = (event: MouseEvent): void => {
@@ -30,8 +32,10 @@ export class MainMenuScene implements Scene {
     const x = (event.clientX - rect.left) * scaleX;
     const y = (event.clientY - rect.top) * scaleY;
 
-    if (this.isPointInStartButton(x, y)) {
-      this.startGame();
+    if (this.isPointInTutorialButton(x, y)) {
+      this.startTutorial();
+    } else if (this.isPointInInfiniteButton(x, y)) {
+      this.startInfinite();
     }
   };
 
@@ -43,16 +47,27 @@ export class MainMenuScene implements Scene {
     const x = (event.clientX - rect.left) * scaleX;
     const y = (event.clientY - rect.top) * scaleY;
 
-    this.startButtonHover = this.isPointInStartButton(x, y);
-    this.game.getCanvas().style.cursor = this.startButtonHover ? 'pointer' : 'default';
+    this.tutorialButtonHover = this.isPointInTutorialButton(x, y);
+    this.infiniteButtonHover = this.isPointInInfiniteButton(x, y);
+    this.game.getCanvas().style.cursor = (this.tutorialButtonHover || this.infiniteButtonHover) ? 'pointer' : 'default';
   };
 
-  private isPointInStartButton(x: number, y: number): boolean {
-    return x >= this.startButtonBounds.x && x <= this.startButtonBounds.x + this.startButtonBounds.width &&
-           y >= this.startButtonBounds.y && y <= this.startButtonBounds.y + this.startButtonBounds.height;
+  private isPointInTutorialButton(x: number, y: number): boolean {
+    return x >= this.tutorialButtonBounds.x && x <= this.tutorialButtonBounds.x + this.tutorialButtonBounds.width &&
+           y >= this.tutorialButtonBounds.y && y <= this.tutorialButtonBounds.y + this.tutorialButtonBounds.height;
   }
 
-  private startGame(): void {
+  private isPointInInfiniteButton(x: number, y: number): boolean {
+    return x >= this.infiniteButtonBounds.x && x <= this.infiniteButtonBounds.x + this.infiniteButtonBounds.width &&
+           y >= this.infiniteButtonBounds.y && y <= this.infiniteButtonBounds.y + this.infiniteButtonBounds.height;
+  }
+
+  private startTutorial(): void {
+    this.game.getAudioManager().playSound('/sounds/success.mp3');
+    this.game.switchScene('tutorial');
+  }
+
+  private startInfinite(): void {
     this.game.getAudioManager().playSound('/sounds/success.mp3');
     this.game.switchScene('game');
   }
@@ -72,35 +87,45 @@ export class MainMenuScene implements Scene {
     ctx.fillStyle = '#DC143C';
     ctx.font = 'bold 72px "Courier New", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('AUTO-SLAYER', canvas.width / 2, 200);
+    ctx.fillText('ABC-SLAYER', canvas.width / 2, 200);
 
     // Subtitle
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '24px "Courier New", monospace';
     ctx.fillText('Survive the endless horde', canvas.width / 2, 250);
 
-    // Start button
-    const buttonColor = this.startButtonHover ? '#A0522D' : '#8B4513';
-    ctx.fillStyle = buttonColor;
-    ctx.fillRect(this.startButtonBounds.x, this.startButtonBounds.y, 
-                 this.startButtonBounds.width, this.startButtonBounds.height);
-
-    // Button border
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(this.startButtonBounds.x, this.startButtonBounds.y, 
-                   this.startButtonBounds.width, this.startButtonBounds.height);
-
-    // Button text
+    // Tutorial button
+    ctx.fillStyle = this.tutorialButtonHover ? '#FF1744' : '#DC143C';
+    ctx.fillRect(this.tutorialButtonBounds.x, this.tutorialButtonBounds.y, this.tutorialButtonBounds.width, this.tutorialButtonBounds.height);
+    
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '24px "Courier New", monospace';
-    ctx.fillText('START GAME', canvas.width / 2, this.startButtonBounds.y + 35);
+    ctx.font = 'bold 24px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(
+      '튜토리얼',
+      this.tutorialButtonBounds.x + this.tutorialButtonBounds.width / 2,
+      this.tutorialButtonBounds.y + this.tutorialButtonBounds.height / 2 + 8
+    );
 
-    // Controls info
-    ctx.fillStyle = '#FFD700';
+    // Infinite mode button
+    ctx.fillStyle = this.infiniteButtonHover ? '#FF1744' : '#DC143C';
+    ctx.fillRect(this.infiniteButtonBounds.x, this.infiniteButtonBounds.y, this.infiniteButtonBounds.width, this.infiniteButtonBounds.height);
+    
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 24px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(
+      '무한 모드',
+      this.infiniteButtonBounds.x + this.infiniteButtonBounds.width / 2,
+      this.infiniteButtonBounds.y + this.infiniteButtonBounds.height / 2 + 8
+    );
+
+    // Instructions
+    ctx.fillStyle = '#AAAAAA';
     ctx.font = '16px "Courier New", monospace';
-    ctx.fillText('WASD / Arrow Keys to move', canvas.width / 2, 550);
-    ctx.fillText('Survive as long as you can!', canvas.width / 2, 580);
+    ctx.fillText('튜토리얼: 5분 보스 클리어 목표', canvas.width / 2, 520);
+    ctx.fillText('무한 모드: 최대한 오래 생존', canvas.width / 2, 550);
+    ctx.fillText('WASD 또는 화살표 키로 이동', canvas.width / 2, 580);
 
     // Version info
     ctx.fillStyle = '#8B4513';

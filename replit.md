@@ -1,12 +1,31 @@
 # Overview
 
-This is a web-based game application called "Auto-Slayer" built with a modern full-stack architecture. The frontend is a React-based game client featuring a custom canvas-based 2D game engine, while the backend is an Express.js server with PostgreSQL database support via Drizzle ORM. The game appears to be a survival-style game where players control a character that automatically engages enemies.
+This is a web-based game application called "ABC-Slayer" built with a modern full-stack architecture. The frontend is a React-based game client featuring a custom canvas-based 2D game engine, while the backend is an Express.js server with PostgreSQL database support via Drizzle ORM. The game appears to be a survival-style game where players control a character that automatically engages enemies.
 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
 
 # Recent Changes (January 2025)
+
+## Game Title Change
+- Renamed from "Auto-Slayer" to "ABC-Slayer" per user request
+
+## Gameplay Balance Improvements (January 31, 2025)
+- Sacred Ground weapon damage interval increased from 1.0 to 2.0 seconds for better enemy movement flow
+- Enemy health significantly increased for better damage balance:
+  - Slime: 10→25 HP
+  - Bat: 8→20 HP
+  - Skeleton Soldier: 40→60 HP
+  - Goblin Shaman: 30→50 HP
+  - Ogre: 500→800 HP
+- Fixed weapon selection system and mouse targeting for proper functionality
+
+## Tutorial Mode Implementation
+- Added new TutorialScene with 5-minute time limit and boss battle
+- Main menu redesigned with two buttons: "튜토리얼" and "무한 모드"
+- Tutorial features reduced enemy spawning, boss at 4:30, victory condition on boss defeat
+- Clear win/lose conditions with automatic return to main menu
 
 ## UI Layout Improvements
 - Moved experience bar to very top of screen (full width, visual progress only)

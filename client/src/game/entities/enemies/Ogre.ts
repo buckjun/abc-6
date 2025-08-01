@@ -7,7 +7,7 @@ export class Ogre extends EnemyBase {
   private attackDuration: number = 0.5;
 
   constructor(x: number, y: number) {
-    super(x, y, 500, 30); // health: 500, speed: 30 (very slow)
+    super(x, y, 800, 30); // health: 800 (increased from 500), speed: 30 (very slow)
     this.color = '#8B4513';
     this.damage = 35;
     this.experienceValue = 100;

@@ -10,7 +10,7 @@ export class GoblinShaman extends EnemyBase {
   private projectiles: Bullet[] = [];
 
   constructor(x: number, y: number) {
-    super(x, y, 30, 45); // health: 30, speed: 45
+    super(x, y, 50, 45); // health: 50 (increased from 30), speed: 45
     this.color = '#228B22';
     this.damage = 12;
     this.experienceValue = 20;

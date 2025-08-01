@@ -1,0 +1,653 @@
+import { Scene } from '../Game';
+import type { Game } from '../Game';
+import { Player } from '../entities/Player';
+import { WeaponManager } from '../managers/WeaponManager';
+import { Slime } from '../entities/enemies/Slime';
+import { Bat } from '../entities/enemies/Bat';
+import { SkeletonSoldier } from '../entities/enemies/SkeletonSoldier';
+import { GoblinShaman } from '../entities/enemies/GoblinShaman';
+import { Ogre } from '../entities/enemies/Ogre';
+import { EnemyBase } from '../entities/enemies/EnemyBase';
+import { ExperienceGem } from '../entities/ExperienceGem';
+import { Bullet } from '../entities/Bullet';
+import { AreaEffect } from '../entities/AreaEffect';
+import { GameUtils } from '../utils/GameUtils';
+
+interface LevelUpOption {
+  id: string;
+  name: string;
+  description: string;
+  type: 'weapon' | 'passive' | 'special';
+}
+
+export class TutorialScene implements Scene {
+  private game: Game;
+  private player: Player;
+  private weaponManager: WeaponManager;
+  private enemies: EnemyBase[] = [];
+  private experienceGems: ExperienceGem[] = [];
+  private bullets: Bullet[] = [];
+  private areaEffects: AreaEffect[] = [];
+  
+  // Game state
+  private gameTime: number = 0;
+  private experience: number = 0;
+  private level: number = 1;
+  private experienceToNext: number = 100;
+  
+  // Tutorial specific
+  private tutorialTime: number = 300; // 5 minutes = 300 seconds
+  private bossSpawned: boolean = false;
+  private tutorialComplete: boolean = false;
+  private gameWon: boolean = false;
+  
+  // Spawning
+  private lastSpawnTime: number = 0;
+  private baseSpawnInterval: number = 2.0; // Spawn enemies every 2 seconds (slower than infinite mode)
+  
+  // Level up UI
+  private showLevelUpMenu: boolean = false;
+  private levelUpOptions: LevelUpOption[] = [];
+  private selectedOptionIndex: number = 0;
+  
+  constructor(game: Game) {
+    this.game = game;
+    this.player = new Player(640, 360); // Center of 1280x720 canvas
+    this.weaponManager = new WeaponManager();
+  }
+
+  init(): void {
+    console.log('TutorialScene initialized');
+    this.player.init();
+    
+    // Start with Magic Orb only
+    this.weaponManager.addWeapon('마력 구체');
+    
+    // Reset all game state
+    this.gameTime = 0;
+    this.experience = 0;
+    this.level = 1;
+    this.experienceToNext = 100;
+    this.bossSpawned = false;
+    this.tutorialComplete = false;
+    this.gameWon = false;
+    this.enemies = [];
+    this.experienceGems = [];
+    this.bullets = [];
+    this.areaEffects = [];
+    
+    console.log('Tutorial started - defeat the boss before 5 minutes!');
+  }
+
+  update(deltaTime: number): void {
+    if (this.tutorialComplete) return;
+    
+    this.gameTime += deltaTime;
+    
+    // Handle input for player movement
+    this.handleInput();
+    
+    // Update player
+    this.player.update(deltaTime);
+    
+    // Spawn boss at 4:30 (30 seconds before end)
+    if (!this.bossSpawned && this.gameTime >= 270) { // 4.5 minutes
+      this.spawnBoss();
+      this.bossSpawned = true;
+    }
+    
+    // Check tutorial time limit
+    if (this.gameTime >= this.tutorialTime) {
+      this.endTutorial(false); // Time's up, failed
+      return;
+    }
+    
+    // Spawn enemies (reduced rate for tutorial)
+    this.lastSpawnTime += deltaTime;
+    if (this.lastSpawnTime >= this.baseSpawnInterval) {
+      this.spawnEnemiesByTime();
+      this.lastSpawnTime = 0;
+    }
+    
+    // Update weapons and get projectiles
+    const playerPos = this.player.getPosition();
+    const mousePos = this.game.getInputManager().getMousePosition();
+    const weaponResults = this.weaponManager.update(deltaTime, this.player, this.enemies, mousePos.x, mousePos.y);
+    
+    // Add new bullets and area effects
+    this.bullets.push(...weaponResults.bullets);
+    this.areaEffects.push(...weaponResults.areaEffects);
+    
+    // Update bullets
+    this.bullets.forEach(bullet => bullet.update(deltaTime));
+    this.bullets = this.bullets.filter(bullet => bullet.isAlive());
+    
+    // Update area effects
+    this.areaEffects.forEach(effect => effect.update(deltaTime));
+    this.areaEffects = this.areaEffects.filter(effect => effect.isAlive());
+    
+    // Update enemies
+    this.enemies.forEach(enemy => {
+      enemy.update(deltaTime, playerPos.x, playerPos.y);
+    });
+    this.enemies = this.enemies.filter(enemy => enemy.isAlive());
+    
+    // Update experience gems
+    this.experienceGems.forEach(gem => gem.update(deltaTime));
+    this.experienceGems = this.experienceGems.filter(gem => gem.isAlive());
+    
+    // Check collisions
+    this.checkBulletEnemyCollisions();
+    this.checkAreaEffectCollisions();
+    this.checkPlayerEnemyCollisions();
+    this.checkExperienceGemCollisions();
+    
+    // Check experience and level up
+    this.checkLevelUp();
+  }
+
+  private spawnBoss(): void {
+    const canvas = this.game.getCanvas();
+    const spawnPos = this.getRandomSpawnPosition(canvas);
+    
+    const boss = new Ogre(spawnPos.x, spawnPos.y);
+    boss.init();
+    this.enemies.push(boss);
+    
+    console.log('BOSS SPAWNED! Defeat it to complete the tutorial!');
+  }
+
+  private spawnEnemiesByTime(): void {
+    const timeMinutes = this.gameTime / 60;
+    const canvas = this.game.getCanvas();
+    
+    // Reduced spawn rate for tutorial
+    let spawnCount = 1;
+    if (timeMinutes >= 3) spawnCount = 2;
+    else if (timeMinutes >= 1.5) spawnCount = 1;
+    
+    for (let i = 0; i < spawnCount; i++) {
+      const spawnPos = this.getRandomSpawnPosition(canvas);
+      
+      if (timeMinutes < 2) {
+        // Early tutorial: Only slimes and bats
+        if (Math.random() < 0.7) {
+          const slime = new Slime(spawnPos.x, spawnPos.y);
+          slime.init();
+          this.enemies.push(slime);
+        } else {
+          const bat = new Bat(spawnPos.x, spawnPos.y);
+          bat.init();
+          this.enemies.push(bat);
+        }
+      } else if (timeMinutes < 4) {
+        // Mid tutorial: Add skeletons
+        const rand = Math.random();
+        if (rand < 0.4) {
+          const slime = new Slime(spawnPos.x, spawnPos.y);
+          slime.init();
+          this.enemies.push(slime);
+        } else if (rand < 0.7) {
+          const bat = new Bat(spawnPos.x, spawnPos.y);
+          bat.init();
+          this.enemies.push(bat);
+        } else {
+          const skeleton = new SkeletonSoldier(spawnPos.x, spawnPos.y);
+          skeleton.init();
+          this.enemies.push(skeleton);
+        }
+      } else {
+        // Late tutorial: Add shamans before boss
+        const rand = Math.random();
+        if (rand < 0.3) {
+          const slime = new Slime(spawnPos.x, spawnPos.y);
+          slime.init();
+          this.enemies.push(slime);
+        } else if (rand < 0.5) {
+          const bat = new Bat(spawnPos.x, spawnPos.y);
+          bat.init();
+          this.enemies.push(bat);
+        } else if (rand < 0.8) {
+          const skeleton = new SkeletonSoldier(spawnPos.x, spawnPos.y);
+          skeleton.init();
+          this.enemies.push(skeleton);
+        } else {
+          const shaman = new GoblinShaman(spawnPos.x, spawnPos.y);
+          shaman.init();
+          this.enemies.push(shaman);
+        }
+      }
+    }
+  }
+
+  private getRandomSpawnPosition(canvas: HTMLCanvasElement): { x: number; y: number } {
+    const playerPos = this.player.getPosition();
+    const minDistance = 200;
+    const maxDistance = 400;
+    
+    let x, y;
+    do {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = minDistance + Math.random() * (maxDistance - minDistance);
+      x = playerPos.x + Math.cos(angle) * distance;
+      y = playerPos.y + Math.sin(angle) * distance;
+      
+      // Keep within canvas bounds
+      x = Math.max(50, Math.min(canvas.width - 50, x));
+      y = Math.max(50, Math.min(canvas.height - 50, y));
+    } while (Math.sqrt((x - playerPos.x) ** 2 + (y - playerPos.y) ** 2) < minDistance);
+    
+    return { x, y };
+  }
+
+  private handleInput(): void {
+    const inputManager = this.game.getInputManager();
+    let moveX = 0;
+    let moveY = 0;
+    
+    if (inputManager.isKeyPressed('ArrowLeft') || inputManager.isKeyPressed('a') || inputManager.isKeyPressed('A')) {
+      moveX = -1;
+    }
+    if (inputManager.isKeyPressed('ArrowRight') || inputManager.isKeyPressed('d') || inputManager.isKeyPressed('D')) {
+      moveX = 1;
+    }
+    if (inputManager.isKeyPressed('ArrowUp') || inputManager.isKeyPressed('w') || inputManager.isKeyPressed('W')) {
+      moveY = -1;
+    }
+    if (inputManager.isKeyPressed('ArrowDown') || inputManager.isKeyPressed('s') || inputManager.isKeyPressed('S')) {
+      moveY = 1;
+    }
+    
+    this.player.setMovement(moveX, moveY);
+    
+    // Handle level up menu input
+    if (this.showLevelUpMenu) {
+      if (inputManager.isKeyPressed('1') && this.levelUpOptions.length >= 1) {
+        this.selectLevelUpOption(0);
+      } else if (inputManager.isKeyPressed('2') && this.levelUpOptions.length >= 2) {
+        this.selectLevelUpOption(1);
+      } else if (inputManager.isKeyPressed('3') && this.levelUpOptions.length >= 3) {
+        this.selectLevelUpOption(2);
+      } else if (inputManager.isKeyPressed('4') && this.levelUpOptions.length >= 4) {
+        this.selectLevelUpOption(3);
+      }
+    }
+  }
+
+  private checkBulletEnemyCollisions(): void {
+    this.bullets.forEach(bullet => {
+      if (!bullet.isAlive()) return;
+      
+      this.enemies.forEach(enemy => {
+        if (!enemy.isAlive()) return;
+        
+        const bulletBounds = bullet.getBounds();
+        const enemyBounds = enemy.getBounds();
+        
+        if (GameUtils.isColliding(bulletBounds, enemyBounds)) {
+          enemy.takeDamage(bullet.getDamage());
+          console.log(`${enemy.constructor.name} hit by bullet for ${bullet.getDamage()} damage`);
+          
+          if (!bullet.isPenetrating()) {
+            bullet.destroy();
+          }
+          
+          if (!enemy.isAlive()) {
+            this.dropExperienceGem(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2, enemy.getExperienceValue());
+            
+            // Check if boss was defeated
+            if (enemy instanceof Ogre && this.bossSpawned) {
+              this.endTutorial(true); // Victory!
+            }
+          }
+        }
+      });
+    });
+  }
+
+  private checkAreaEffectCollisions(): void {
+    this.areaEffects.forEach(effect => {
+      this.enemies.forEach(enemy => {
+        if (!enemy.isAlive()) return;
+        
+        const enemyBounds = enemy.getBounds();
+        if (effect.isInArea(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2)) {
+          enemy.takeDamage(effect.getDamage());
+          
+          if (!enemy.isAlive()) {
+            this.dropExperienceGem(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2, enemy.getExperienceValue());
+            
+            // Check if boss was defeated
+            if (enemy instanceof Ogre && this.bossSpawned) {
+              this.endTutorial(true); // Victory!
+            }
+          }
+        }
+      });
+    });
+  }
+
+  private checkPlayerEnemyCollisions(): void {
+    const playerBounds = this.player.getBounds();
+    
+    this.enemies.forEach(enemy => {
+      if (!enemy.isAlive()) return;
+      
+      const enemyBounds = enemy.getBounds();
+      
+      if (GameUtils.isColliding(playerBounds, enemyBounds)) {
+        this.player.takeDamage(enemy.getDamage());
+        
+        if (this.player.getHealth() <= 0) {
+          this.endTutorial(false); // Game over
+        }
+      }
+    });
+  }
+
+  private checkExperienceGemCollisions(): void {
+    const playerBounds = this.player.getBounds();
+    
+    this.experienceGems.forEach(gem => {
+      if (!gem.isAlive()) return;
+      
+      const gemBounds = gem.getBounds();
+      
+      if (GameUtils.isColliding(playerBounds, gemBounds)) {
+        this.experience += gem.getValue();
+        gem.destroy();
+        console.log(`Collected ${gem.getValue()} experience`);
+      }
+    });
+  }
+
+  private dropExperienceGem(x: number, y: number, baseValue: number): void {
+    let gemValue = baseValue;
+    if (baseValue >= 50) {
+      gemValue = 100; // Blue gem
+    } else if (baseValue >= 25) {
+      gemValue = 50; // Purple gem
+    } else {
+      gemValue = 25; // Yellow gem
+    }
+    
+    const gem = new ExperienceGem(x, y, gemValue);
+    gem.init();
+    this.experienceGems.push(gem);
+  }
+
+  private checkLevelUp(): void {
+    if (this.experience >= this.experienceToNext && !this.showLevelUpMenu) {
+      this.levelUp();
+    }
+  }
+
+  private levelUp(): void {
+    this.level++;
+    this.experience -= this.experienceToNext;
+    this.experienceToNext = Math.floor(this.experienceToNext * 1.2);
+    
+    console.log(`Level up! Now level ${this.level}`);
+    
+    this.levelUpOptions = this.generateLevelUpOptions();
+    this.showLevelUpMenu = true;
+    this.selectedOptionIndex = 0;
+  }
+
+  private generateLevelUpOptions(): LevelUpOption[] {
+    const options: LevelUpOption[] = [];
+    const weapons = this.weaponManager.getWeapons();
+    
+    // Add weapon upgrades
+    weapons.forEach(weapon => {
+      if (weapon.canLevelUp()) {
+        options.push({
+          id: `upgrade_${weapon.getName()}`,
+          name: `${weapon.getName()} 강화`,
+          description: `${weapon.getName()}을(를) 레벨 ${weapon.getLevel() + 1}로 강화합니다`,
+          type: 'weapon'
+        });
+      }
+    });
+    
+    // Add new weapons if slots available
+    if (this.weaponManager.getAvailableWeaponSlots() > 0) {
+      const availableWeapons = ['수리검', '신성한 영역'];
+      availableWeapons.forEach(weaponType => {
+        if (!weapons.some(w => w.getName().includes(weaponType))) {
+          options.push({
+            id: `new_${weaponType}`,
+            name: weaponType,
+            description: `새로운 무기: ${weaponType}`,
+            type: 'weapon'
+          });
+        }
+      });
+    }
+    
+    // Add passive options
+    const passiveOptions = [
+      { id: 'passive_체력 증가', name: '체력 증가', description: '최대 체력이 증가하고 체력을 회복합니다' },
+      { id: 'passive_이동속도', name: '이동속도 증가', description: '이동 속도가 증가합니다' },
+      { id: 'passive_공격력', name: '공격력 증가', description: '모든 무기의 공격력이 증가합니다' }
+    ];
+    
+    passiveOptions.forEach(passive => options.push({ ...passive, type: 'passive' }));
+    
+    // Special options
+    if (this.player.getHealth() < 70) {
+      options.push({
+        id: 'special_heal',
+        name: '완전 회복',
+        description: '체력을 완전히 회복합니다',
+        type: 'special'
+      });
+    }
+    
+    const shuffled = options.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(4, shuffled.length));
+  }
+
+  private selectLevelUpOption(index: number): void {
+    if (index >= 0 && index < this.levelUpOptions.length) {
+      const option = this.levelUpOptions[index];
+      this.applyLevelUpReward(option);
+      this.showLevelUpMenu = false;
+      this.levelUpOptions = [];
+    }
+  }
+
+  private applyLevelUpReward(option: LevelUpOption): void {
+    console.log(`Selected reward: ${option.name}`);
+    
+    if (option.id.startsWith('upgrade_')) {
+      const weaponName = option.id.replace('upgrade_', '');
+      const weapons = this.weaponManager.getWeapons();
+      const weapon = weapons.find(w => w.getName() === weaponName);
+      if (weapon) {
+        weapon.levelUp();
+        console.log(`${weaponName} upgraded to level ${weapon.getLevel()}`);
+      }
+    } else if (option.id.startsWith('new_')) {
+      const weaponName = option.id.replace('new_', '');
+      this.weaponManager.addWeapon(weaponName);
+      console.log(`New weapon added: ${weaponName}`);
+    } else if (option.id === 'special_heal') {
+      const currentHealth = this.player.getHealth();
+      const healAmount = 100 - currentHealth;
+      this.player.heal(healAmount);
+      console.log('Player healed to full health!');
+    }
+  }
+
+  private endTutorial(victory: boolean): void {
+    this.tutorialComplete = true;
+    this.gameWon = victory;
+    
+    if (victory) {
+      console.log('TUTORIAL COMPLETE! Boss defeated!');
+    } else {
+      console.log('Tutorial failed. Try again!');
+    }
+    
+    // Wait a moment then return to menu
+    setTimeout(() => {
+      this.game.switchScene('mainmenu');
+    }, 3000);
+  }
+
+  render(ctx: CanvasRenderingContext2D): void {
+    const canvas = this.game.getCanvas();
+    
+    // Background
+    ctx.fillStyle = '#0F0F0F';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Render game objects
+    this.areaEffects.forEach(effect => effect.render(ctx));
+    this.experienceGems.forEach(gem => gem.render(ctx));
+    this.enemies.forEach(enemy => enemy.render(ctx));
+    this.bullets.forEach(bullet => bullet.render(ctx));
+    this.player.render(ctx);
+    
+    // Tutorial UI
+    this.renderTutorialUI(ctx);
+    
+    // Level up menu
+    if (this.showLevelUpMenu) {
+      this.renderLevelUpMenu(ctx);
+    }
+    
+    // End screen
+    if (this.tutorialComplete) {
+      this.renderEndScreen(ctx);
+    }
+  }
+
+  private renderTutorialUI(ctx: CanvasRenderingContext2D): void {
+    const canvas = this.game.getCanvas();
+    
+    // Tutorial timer at top
+    const timeLeft = Math.max(0, this.tutorialTime - this.gameTime);
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = Math.floor(timeLeft % 60);
+    
+    ctx.fillStyle = timeLeft < 60 ? '#FF4444' : '#FFFFFF';
+    ctx.font = 'bold 24px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`TIME: ${minutes}:${seconds.toString().padStart(2, '0')}`, canvas.width / 2, 40);
+    
+    // Tutorial objective
+    if (!this.bossSpawned) {
+      ctx.fillStyle = '#FFAA00';
+      ctx.font = '18px "Courier New", monospace';
+      ctx.fillText('목표: 보스가 나타날 때까지 생존하세요!', canvas.width / 2, 70);
+    } else {
+      ctx.fillStyle = '#FF4444';
+      ctx.font = 'bold 20px "Courier New", monospace';
+      ctx.fillText('보스를 처치하세요!', canvas.width / 2, 70);
+    }
+    
+    // Player stats (bottom left)
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '16px "Courier New", monospace';
+    ctx.fillText(`레벨: ${this.level}`, 20, canvas.height - 80);
+    ctx.fillText(`체력: ${this.player.getHealth()}/100`, 20, canvas.height - 60);
+    ctx.fillText(`경험치: ${this.experience}/${this.experienceToNext}`, 20, canvas.height - 40);
+    ctx.fillText(`적 수: ${this.enemies.length}`, 20, canvas.height - 20);
+  }
+
+  private renderLevelUpMenu(ctx: CanvasRenderingContext2D): void {
+    const canvas = this.game.getCanvas();
+    
+    // Semi-transparent overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Menu background
+    const menuX = canvas.width / 2 - 300;
+    const menuY = canvas.height / 2 - 200;
+    const menuWidth = 600;
+    const menuHeight = 400;
+    
+    ctx.fillStyle = '#2A2A2A';
+    ctx.fillRect(menuX, menuY, menuWidth, menuHeight);
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(menuX, menuY, menuWidth, menuHeight);
+    
+    // Title
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 32px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('LEVEL UP!', canvas.width / 2, menuY + 50);
+    
+    // Options
+    ctx.font = '18px "Courier New", monospace';
+    this.levelUpOptions.forEach((option, index) => {
+      const optionY = menuY + 120 + index * 60;
+      
+      // Option background
+      ctx.fillStyle = '#404040';
+      ctx.fillRect(menuX + 20, optionY - 25, menuWidth - 40, 50);
+      
+      // Option text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${index + 1}. ${option.name}`, menuX + 40, optionY - 5);
+      ctx.font = '14px "Courier New", monospace';
+      ctx.fillStyle = '#CCCCCC';
+      ctx.fillText(option.description, menuX + 40, optionY + 15);
+      ctx.font = '18px "Courier New", monospace';
+    });
+    
+    // Instructions
+    ctx.fillStyle = '#AAAAAA';
+    ctx.font = '16px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('숫자 키(1-4)를 눌러 선택하세요', canvas.width / 2, menuY + menuHeight - 30);
+  }
+
+  private renderEndScreen(ctx: CanvasRenderingContext2D): void {
+    const canvas = this.game.getCanvas();
+    
+    // Semi-transparent overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if (this.gameWon) {
+      ctx.fillStyle = '#00FF00';
+      ctx.font = 'bold 48px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('튜토리얼 완료!', canvas.width / 2, canvas.height / 2 - 50);
+      
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '24px "Courier New", monospace';
+      ctx.fillText('보스를 성공적으로 처치했습니다!', canvas.width / 2, canvas.height / 2);
+      ctx.fillText('이제 무한 모드에 도전해보세요!', canvas.width / 2, canvas.height / 2 + 40);
+    } else {
+      ctx.fillStyle = '#FF4444';
+      ctx.font = 'bold 48px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('튜토리얼 실패', canvas.width / 2, canvas.height / 2 - 50);
+      
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '24px "Courier New", monospace';
+      if (this.player.getHealth() <= 0) {
+        ctx.fillText('플레이어가 사망했습니다', canvas.width / 2, canvas.height / 2);
+      } else {
+        ctx.fillText('시간이 초과되었습니다', canvas.width / 2, canvas.height / 2);
+      }
+      ctx.fillText('다시 시도해보세요!', canvas.width / 2, canvas.height / 2 + 40);
+    }
+    
+    ctx.fillStyle = '#AAAAAA';
+    ctx.font = '18px "Courier New", monospace';
+    ctx.fillText('메인 메뉴로 돌아갑니다...', canvas.width / 2, canvas.height / 2 + 100);
+  }
+
+  destroy(): void {
+    console.log('TutorialScene destroyed');
+  }
+}

@@ -6,7 +6,7 @@ export class SkeletonSoldier extends EnemyBase {
   private formationId: number;
 
   constructor(x: number, y: number, formationId: number = 0) {
-    super(x, y, 40, 70); // health: 40, speed: 70
+    super(x, y, 60, 70); // health: 60 (increased from 40), speed: 70
     this.color = '#CCCCCC';
     this.damage = 15;
     this.experienceValue = 15;

@@ -1,6 +1,7 @@
 import { PreloadScene } from './scenes/PreloadScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
 import { GameScene } from './scenes/GameScene';
+import { TutorialScene } from './scenes/TutorialScene';
 import { UIScene } from './scenes/UIScene';
 import { InputManager } from './managers/InputManager';
 import { AudioManager } from './managers/AudioManager';
@@ -12,7 +13,7 @@ export interface Scene {
   destroy(): void;
 }
 
-export type SceneType = 'preload' | 'mainmenu' | 'game' | 'ui';
+export type SceneType = 'preload' | 'mainmenu' | 'game' | 'tutorial' | 'ui';
 
 export class Game {
   private canvas: HTMLCanvasElement;
@@ -53,6 +54,7 @@ export class Game {
     this.scenes.set('preload', new PreloadScene(this));
     this.scenes.set('mainmenu', new MainMenuScene(this));
     this.scenes.set('game', new GameScene(this));
+    this.scenes.set('tutorial', new TutorialScene(this));
     this.scenes.set('ui', new UIScene(this));
 
     // Start with preload scene

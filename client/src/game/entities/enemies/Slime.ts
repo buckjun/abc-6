@@ -2,7 +2,7 @@ import { EnemyBase } from './EnemyBase';
 
 export class Slime extends EnemyBase {
   constructor(x: number, y: number) {
-    super(x, y, 10, 50); // health: 10, speed: 50
+    super(x, y, 25, 50); // health: 25 (increased from 10), speed: 50
     this.color = '#00AA00';
     this.damage = 8;
     this.experienceValue = 5;

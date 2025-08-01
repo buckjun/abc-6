@@ -5,7 +5,7 @@ export class Bat extends EnemyBase {
   private waveTime: number = 0;
 
   constructor(x: number, y: number) {
-    super(x, y, 8, 80); // health: 8, speed: 80
+    super(x, y, 20, 80); // health: 20 (increased from 8), speed: 80
     this.color = '#4A0080';
     this.damage = 6;
     this.experienceValue = 8;

@@ -12,7 +12,7 @@ export class AreaEffect {
   private active: boolean = true;
   private followTarget: Player | null = null;
   private damageTimer: number = 0;
-  private damageInterval: number = 1.0; // Damage every second
+  private damageInterval: number = 2.0; // Damage every 2 seconds (increased from 1.0)
   private evolved: boolean = false;
 
   constructor(x: number, y: number, radius: number, damage: number, duration: number, evolved: boolean = false) {
