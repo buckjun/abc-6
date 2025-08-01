@@ -78,10 +78,8 @@ export class GameScene implements Scene {
     this.hasExperienceMagnet = false;
     this.waveManager.reset();
     
-    // Setup initial weapons
+    // Setup initial weapon - only Magic Orb
     this.weaponManager.addWeapon('마력 구체');
-    this.weaponManager.addWeapon('수리검');
-    this.weaponManager.addWeapon('신성한 영역');
     
     // Initialize UI scene
     const uiScene = this.game.getScene('ui');

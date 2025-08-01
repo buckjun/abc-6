@@ -28,6 +28,11 @@ Preferred communication style: Simple, everyday language.
 - Fixed weapon levelUp method calls for proper upgrade progression
 - Enhanced reward selection debugging for better user feedback
 
+## Weapon System Overhaul
+- Players now start with only Magic Orb weapon (removed auto-equipped weapons)
+- All other weapons (Shuriken, Sacred Ground, etc.) must be acquired through level-up choices
+- Level-up system properly offers new weapons as options for strategic progression
+
 # System Architecture
 
 ## Frontend Architecture
