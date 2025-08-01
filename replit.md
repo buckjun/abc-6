@@ -8,6 +8,12 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (August 2025)
 
+## Weapon System Balance Update (August 1, 2025)
+- **Magic Bolt Damage Adjustment**: Increased damage from 8→20 for proper enemy kill balance
+- **Enemy Balance Verification**: Confirmed Bat health at 20, ensuring 1-shot kills with balanced damage
+- **Weapon Initialization Fix**: Complete WeaponManager reset on game restart prevents weapon persistence
+- **Cross-Mode Synchronization**: Tutorial and infinite modes now use identical weapon systems
+
 ## New Weapon System Implementation (August 1, 2025)
 - **Weapon Replacement**: Completely removed problematic Chain Lightning and Infinite Blade weapons
 - **New Intuitive Weapons**: Implemented FireBall and Ice Arrow weapons with clear mechanics:
