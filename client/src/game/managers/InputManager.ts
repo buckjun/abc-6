@@ -5,6 +5,7 @@ export class InputManager {
   private mouseX: number = 0;
   private mouseY: number = 0;
   private canvas: HTMLCanvasElement | null = null;
+  private pressedKeys: Set<string> = new Set(); // Track single key presses
 
   constructor() {
     this.init();
@@ -59,6 +60,11 @@ export class InputManager {
   private handleKeyDown = (event: KeyboardEvent): void => {
     this.keys.add(event.code);
     
+    // Track single press (only if not already pressed)
+    if (!this.pressedKeys.has(event.key)) {
+      this.pressedKeys.add(event.key);
+    }
+    
     // Handle single key press events
     const handler = this.keyPressHandlers.get(event.code);
     if (handler) {
@@ -93,10 +99,19 @@ export class InputManager {
 
   private handleKeyUp = (event: KeyboardEvent): void => {
     this.keys.delete(event.code);
+    this.pressedKeys.delete(event.key);
   };
 
   public isKeyDown(keyCode: string): boolean {
     return this.keys.has(keyCode);
+  }
+
+  public isKeyPressed(key: string): boolean {
+    const pressed = this.pressedKeys.has(key);
+    if (pressed) {
+      this.pressedKeys.delete(key); // Remove after checking to ensure single press
+    }
+    return pressed;
   }
 
   public onKeyPress(key: string, handler: () => void): void {
@@ -125,6 +140,7 @@ export class InputManager {
     }
     
     this.keys.clear();
+    this.pressedKeys.clear();
     this.keyPressHandlers.clear();
     this.mouseClickHandlers = [];
     console.log('InputManager destroyed');

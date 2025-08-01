@@ -2,11 +2,10 @@ import { Scene } from '../Game';
 import type { Game } from '../Game';
 import { Player } from '../entities/Player';
 import { WeaponManager } from '../managers/WeaponManager';
-import { Slime } from '../entities/enemies/Slime';
-import { Bat } from '../entities/enemies/Bat';
-import { SkeletonSoldier } from '../entities/enemies/SkeletonSoldier';
-import { GoblinShaman } from '../entities/enemies/GoblinShaman';
-import { Ogre } from '../entities/enemies/Ogre';
+import { EnemyA } from '../entities/enemies/EnemyA';
+import { EnemyB } from '../entities/enemies/EnemyB';
+import { EnemyC } from '../entities/enemies/EnemyC';
+import { Boot } from '../entities/enemies/Boot';
 import { EnemyBase } from '../entities/enemies/EnemyBase';
 import { ExperienceGem } from '../entities/ExperienceGem';
 import { Bullet } from '../entities/Bullet';
@@ -54,6 +53,13 @@ export class TutorialScene implements Scene {
     this.game = game;
     this.player = new Player(640, 360); // Center of 1280x720 canvas
     this.weaponManager = new WeaponManager();
+    
+    // Set up mouse click handler for level up menu
+    this.game.getInputManager().onCanvasClick((x, y) => {
+      if (this.showLevelUpMenu) {
+        this.handleLevelUpMenuClick(x, y);
+      }
+    });
   }
 
   init(): void {
@@ -150,11 +156,11 @@ export class TutorialScene implements Scene {
     const canvas = this.game.getCanvas();
     const spawnPos = this.getRandomSpawnPosition(canvas);
     
-    const boss = new Ogre(spawnPos.x, spawnPos.y);
+    const boss = new Boot(spawnPos.x, spawnPos.y);
     boss.init();
     this.enemies.push(boss);
     
-    console.log('BOSS SPAWNED! Defeat it to complete the tutorial!');
+    console.log('BOSS BOOT SPAWNED! Defeat it to complete the tutorial!');
   }
 
   private spawnEnemiesByTime(): void {
@@ -168,53 +174,38 @@ export class TutorialScene implements Scene {
     
     for (let i = 0; i < spawnCount; i++) {
       const spawnPos = this.getRandomSpawnPosition(canvas);
+      const rand = Math.random();
       
-      if (timeMinutes < 2) {
-        // Early tutorial: Only slimes and bats
-        if (Math.random() < 0.7) {
-          const slime = new Slime(spawnPos.x, spawnPos.y);
-          slime.init();
-          this.enemies.push(slime);
+      if (timeMinutes < 1.5) {
+        // Early tutorial: Only A enemies (fast)
+        const enemyA = new EnemyA(spawnPos.x, spawnPos.y);
+        enemyA.init();
+        this.enemies.push(enemyA);
+      } else if (timeMinutes < 3) {
+        // Mid tutorial: A and B enemies
+        if (rand < 0.6) {
+          const enemyA = new EnemyA(spawnPos.x, spawnPos.y);
+          enemyA.init();
+          this.enemies.push(enemyA);
         } else {
-          const bat = new Bat(spawnPos.x, spawnPos.y);
-          bat.init();
-          this.enemies.push(bat);
-        }
-      } else if (timeMinutes < 4) {
-        // Mid tutorial: Add skeletons
-        const rand = Math.random();
-        if (rand < 0.4) {
-          const slime = new Slime(spawnPos.x, spawnPos.y);
-          slime.init();
-          this.enemies.push(slime);
-        } else if (rand < 0.7) {
-          const bat = new Bat(spawnPos.x, spawnPos.y);
-          bat.init();
-          this.enemies.push(bat);
-        } else {
-          const skeleton = new SkeletonSoldier(spawnPos.x, spawnPos.y);
-          skeleton.init();
-          this.enemies.push(skeleton);
+          const enemyB = new EnemyB(spawnPos.x, spawnPos.y);
+          enemyB.init();
+          this.enemies.push(enemyB);
         }
       } else {
-        // Late tutorial: Add shamans before boss
-        const rand = Math.random();
-        if (rand < 0.3) {
-          const slime = new Slime(spawnPos.x, spawnPos.y);
-          slime.init();
-          this.enemies.push(slime);
-        } else if (rand < 0.5) {
-          const bat = new Bat(spawnPos.x, spawnPos.y);
-          bat.init();
-          this.enemies.push(bat);
-        } else if (rand < 0.8) {
-          const skeleton = new SkeletonSoldier(spawnPos.x, spawnPos.y);
-          skeleton.init();
-          this.enemies.push(skeleton);
+        // Late tutorial: All enemy types before boss
+        if (rand < 0.4) {
+          const enemyA = new EnemyA(spawnPos.x, spawnPos.y);
+          enemyA.init();
+          this.enemies.push(enemyA);
+        } else if (rand < 0.7) {
+          const enemyB = new EnemyB(spawnPos.x, spawnPos.y);
+          enemyB.init();
+          this.enemies.push(enemyB);
         } else {
-          const shaman = new GoblinShaman(spawnPos.x, spawnPos.y);
-          shaman.init();
-          this.enemies.push(shaman);
+          const enemyC = new EnemyC(spawnPos.x, spawnPos.y);
+          enemyC.init();
+          this.enemies.push(enemyC);
         }
       }
     }
@@ -262,13 +253,14 @@ export class TutorialScene implements Scene {
     
     // Handle level up menu input
     if (this.showLevelUpMenu) {
-      if (inputManager.isKeyDown('1') && this.levelUpOptions.length >= 1) {
+      // Check for key presses (single press)
+      if (this.game.getInputManager().isKeyPressed('1') && this.levelUpOptions.length >= 1) {
         this.selectLevelUpOption(0);
-      } else if (inputManager.isKeyDown('2') && this.levelUpOptions.length >= 2) {
+      } else if (this.game.getInputManager().isKeyPressed('2') && this.levelUpOptions.length >= 2) {
         this.selectLevelUpOption(1);
-      } else if (inputManager.isKeyDown('3') && this.levelUpOptions.length >= 3) {
+      } else if (this.game.getInputManager().isKeyPressed('3') && this.levelUpOptions.length >= 3) {
         this.selectLevelUpOption(2);
-      } else if (inputManager.isKeyDown('4') && this.levelUpOptions.length >= 4) {
+      } else if (this.game.getInputManager().isKeyPressed('4') && this.levelUpOptions.length >= 4) {
         this.selectLevelUpOption(3);
       }
     }
@@ -296,7 +288,7 @@ export class TutorialScene implements Scene {
             this.dropExperienceGem(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2, enemy.getExperienceValue());
             
             // Check if boss was defeated
-            if (enemy instanceof Ogre && this.bossSpawned) {
+            if (enemy instanceof Boot && this.bossSpawned) {
               this.endTutorial(true); // Victory!
             }
           }
@@ -318,7 +310,7 @@ export class TutorialScene implements Scene {
             this.dropExperienceGem(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2, enemy.getExperienceValue());
             
             // Check if boss was defeated
-            if (enemy instanceof Ogre && this.bossSpawned) {
+            if (enemy instanceof Boot && this.bossSpawned) {
               this.endTutorial(true); // Victory!
             }
           }
@@ -448,6 +440,29 @@ export class TutorialScene implements Scene {
     return shuffled.slice(0, Math.min(4, shuffled.length));
   }
 
+  private handleLevelUpMenuClick(x: number, y: number): void {
+    const canvas = this.game.getCanvas();
+    const menuX = canvas.width / 2 - 300;
+    const menuY = canvas.height / 2 - 200;
+    
+    // Check which option was clicked
+    for (let i = 0; i < this.levelUpOptions.length; i++) {
+      const optionY = menuY + 120 + i * 60;
+      const optionBounds = {
+        x: menuX + 20,
+        y: optionY - 25,
+        width: 560,
+        height: 50
+      };
+      
+      if (x >= optionBounds.x && x <= optionBounds.x + optionBounds.width &&
+          y >= optionBounds.y && y <= optionBounds.y + optionBounds.height) {
+        this.selectLevelUpOption(i);
+        break;
+      }
+    }
+  }
+
   private selectLevelUpOption(index: number): void {
     if (index >= 0 && index < this.levelUpOptions.length) {
       const option = this.levelUpOptions[index];
@@ -499,9 +514,40 @@ export class TutorialScene implements Scene {
   render(ctx: CanvasRenderingContext2D): void {
     const canvas = this.game.getCanvas();
     
-    // Background
-    ctx.fillStyle = '#0F0F0F';
+    // Modern battlefield background
+    ctx.fillStyle = '#2C1810'; // Dark brown base
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Battle-worn terrain pattern
+    ctx.strokeStyle = '#4A3B2F';
+    ctx.lineWidth = 2;
+    for (let x = 0; x < canvas.width; x += 80) {
+      for (let y = 0; y < canvas.height; y += 80) {
+        // Random battle scars/cracks
+        if (Math.sin(x * 0.01) * Math.cos(y * 0.01) > 0.3) {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 20 + Math.sin(x) * 10, y + 20 + Math.cos(y) * 10);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Ambient lighting effect
+    const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width/2);
+    gradient.addColorStop(0, 'rgba(255, 165, 0, 0.1)'); // Orange glow center
+    gradient.addColorStop(0.5, 'rgba(139, 69, 19, 0.05)'); // Brown mid
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)'); // Dark edges
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Battle debris (rocks/stones)
+    ctx.fillStyle = '#696969';
+    for (let i = 0; i < 15; i++) {
+      const x = (i * 137 + 50) % canvas.width;
+      const y = (i * 97 + 100) % canvas.height;
+      ctx.fillRect(x, y, 8 + (i % 4), 6 + (i % 3));
+    }
     
     // Render game objects
     this.areaEffects.forEach(effect => effect.render(ctx));
