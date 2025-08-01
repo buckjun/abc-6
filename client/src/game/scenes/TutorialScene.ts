@@ -139,7 +139,7 @@ export class TutorialScene implements Scene {
     this.enemies = this.enemies.filter(enemy => enemy.isAlive());
     
     // Update experience gems
-    this.experienceGems.forEach(gem => gem.update(deltaTime));
+    this.experienceGems.forEach(gem => gem.update(deltaTime, playerPos.x, playerPos.y));
     this.experienceGems = this.experienceGems.filter(gem => gem.isAlive());
     
     // Check collisions
@@ -285,7 +285,7 @@ export class TutorialScene implements Scene {
           }
           
           if (!enemy.isAlive()) {
-            this.dropExperienceGem(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2, enemy.getExperienceValue());
+            this.dropExperienceGem(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2, 25);
             
             // Check if boss was defeated
             if (enemy instanceof Boot && this.bossSpawned) {
@@ -307,7 +307,7 @@ export class TutorialScene implements Scene {
           enemy.takeDamage(effect.getDamage());
           
           if (!enemy.isAlive()) {
-            this.dropExperienceGem(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2, enemy.getExperienceValue());
+            this.dropExperienceGem(enemyBounds.x + enemyBounds.width/2, enemyBounds.y + enemyBounds.height/2, 25);
             
             // Check if boss was defeated
             if (enemy instanceof Boot && this.bossSpawned) {
@@ -594,6 +594,9 @@ export class TutorialScene implements Scene {
       ctx.fillText('보스를 처치하세요!', canvas.width / 2, 70);
     }
     
+    // Player status gauges (top left)
+    this.renderPlayerStatusGauges(ctx);
+    
     // Player stats (bottom left)
     ctx.textAlign = 'left';
     ctx.fillStyle = '#FFFFFF';
@@ -602,6 +605,64 @@ export class TutorialScene implements Scene {
     ctx.fillText(`체력: ${this.player.getHealth()}/100`, 20, canvas.height - 60);
     ctx.fillText(`경험치: ${this.experience}/${this.experienceToNext}`, 20, canvas.height - 40);
     ctx.fillText(`적 수: ${this.enemies.length}`, 20, canvas.height - 20);
+  }
+
+  private renderPlayerStatusGauges(ctx: CanvasRenderingContext2D): void {
+    const gaugeWidth = 200;
+    const gaugeHeight = 20;
+    const gaugeX = 20;
+    const healthY = 100;
+    const expY = 130;
+
+    // Health gauge
+    const healthPercent = this.player.getHealth() / 100;
+    
+    // Health gauge background
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(gaugeX, healthY, gaugeWidth, gaugeHeight);
+    
+    // Health gauge border
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(gaugeX, healthY, gaugeWidth, gaugeHeight);
+    
+    // Health fill
+    ctx.fillStyle = healthPercent > 0.6 ? '#00FF00' : healthPercent > 0.3 ? '#FFFF00' : '#FF0000';
+    ctx.fillRect(gaugeX + 2, healthY + 2, (gaugeWidth - 4) * healthPercent, gaugeHeight - 4);
+    
+    // Health text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 14px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`체력: ${this.player.getHealth()}/100`, gaugeX + gaugeWidth / 2, healthY + 14);
+
+    // Experience gauge
+    const expPercent = this.experience / this.experienceToNext;
+    
+    // Experience gauge background
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(gaugeX, expY, gaugeWidth, gaugeHeight);
+    
+    // Experience gauge border
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(gaugeX, expY, gaugeWidth, gaugeHeight);
+    
+    // Experience fill
+    ctx.fillStyle = '#00AAFF';
+    ctx.fillRect(gaugeX + 2, expY + 2, (gaugeWidth - 4) * expPercent, gaugeHeight - 4);
+    
+    // Experience text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 14px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`경험치: ${this.experience}/${this.experienceToNext}`, gaugeX + gaugeWidth / 2, expY + 14);
+    
+    // Level display
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 16px "Courier New", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`레벨: ${this.level}`, gaugeX, healthY - 10);
   }
 
   private renderLevelUpMenu(ctx: CanvasRenderingContext2D): void {

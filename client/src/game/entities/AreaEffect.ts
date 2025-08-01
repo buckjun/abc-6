@@ -164,4 +164,8 @@ export class AreaEffect {
   getDamage(): number {
     return this.damage;
   }
+
+  isAlive(): boolean {
+    return this.active;
+  }
 }
