@@ -6,7 +6,24 @@ This is a web-based game application called "ABC-Slayer" built with a modern ful
 
 Preferred communication style: Simple, everyday language.
 
-# Recent Changes (January 2025)
+# Recent Changes (August 2025)
+
+## New Weapon System Implementation (August 1, 2025)
+- **Weapon Replacement**: Completely removed problematic Chain Lightning and Infinite Blade weapons
+- **New Intuitive Weapons**: Implemented FireBall and Ice Arrow weapons with clear mechanics:
+  - **FireBall (화염탄)**: Slow but powerful auto-targeting projectiles (15 damage, 1.5s cooldown)
+  - **Ice Arrow (얼음 화살)**: Fast piercing projectiles (12 damage, 0.8s cooldown, penetrates enemies)
+- **Balanced Progression**: Both weapons have 8 levels with clear stat improvements and evolution paths
+- **Evolution System**: FireBall evolves to Dragon Fire, Ice Arrow evolves to Glacier Spear
+- **Full Integration**: Available in both tutorial and infinite modes with proper UI integration
+
+## Bug Fixes (August 1, 2025)
+- **Magic Bolt Duplicate Fix**: Prevented duplicate weapon initialization at game start
+- **Sacred Ground Balance**: Further reduced damage values for optimal gameplay balance (0.3→2.0 damage scaling)
+- **Chain Effect Removal**: Completely removed complex chain lightning mechanics from collision detection
+- **Type Safety**: Fixed all TypeScript errors related to Enemy/EnemyBase type mismatches
+
+# Previous Changes (January 2025)
 
 ## Game Title Change
 - Renamed from "Auto-Slayer" to "ABC-Slayer" per user request

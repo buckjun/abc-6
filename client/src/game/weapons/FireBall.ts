@@ -1,29 +1,28 @@
 import { WeaponBase, WeaponStats } from './WeaponBase';
 import { Player } from '../entities/Player';
-import { Enemy } from '../entities/Enemy';
+import { EnemyBase } from '../entities/EnemyBase';
 import { Bullet } from '../entities/Bullet';
 
-export class InfiniteBlade extends WeaponBase {
+export class FireBall extends WeaponBase {
   constructor() {
     const initialStats: WeaponStats = {
-      damage: 8,
-      cooldown: 0.4,
+      damage: 15,
+      cooldown: 1.5,
       projectileCount: 1,
-      range: 140
+      range: 300
     };
-    super('무한의 칼날', initialStats);
+    super('화염탄', initialStats);
     this.canEvolve = true;
   }
 
-  protected fire(player: Player, enemies: Enemy[], mouseX: number, mouseY: number): Bullet[] {
+  protected fire(player: Player, enemies: EnemyBase[], mouseX: number, mouseY: number): Bullet[] {
     const playerPos = player.getPosition();
     
-    // Find closest enemy within range
-    let closestEnemy: any = null;
+    // Find closest enemy
+    let closestEnemy: EnemyBase | null = null;
     let closestDistance = Infinity;
     
-    const allEnemies = [...enemies];
-    allEnemies.forEach(enemy => {
+    enemies.forEach(enemy => {
       if (!enemy.isAlive()) return;
       
       const enemyPos = enemy.getPosition();
@@ -40,7 +39,7 @@ export class InfiniteBlade extends WeaponBase {
     
     if (!closestEnemy) return [];
     
-    // Create fast blade projectile
+    // Create fireball projectile
     const targetPos = closestEnemy.getPosition();
     
     const bullet = new Bullet(
@@ -49,12 +48,12 @@ export class InfiniteBlade extends WeaponBase {
       targetPos.x,
       targetPos.y,
       this.stats.damage,
-      800
+      250 // Slower than magic bolt
     );
     
-    bullet.setColor('#C0C0C0'); // Silver blade
+    bullet.setColor('#FF4500'); // Orange-red fireball
     
-    console.log(`Infinite Blade fired with damage: ${this.stats.damage}`);
+    console.log(`FireBall fired with damage: ${this.stats.damage}`);
     
     return [bullet];
   }
@@ -62,42 +61,42 @@ export class InfiniteBlade extends WeaponBase {
   protected updateStats(): void {
     switch (this.level) {
       case 2:
-        this.stats.damage = 12;
+        this.stats.damage = 22;
         break;
       case 3:
-        this.stats.cooldown = 0.3;
+        this.stats.cooldown = 1.2;
         break;
       case 4:
-        this.stats.damage = 16;
-        this.stats.range = 160;
+        this.stats.damage = 30;
+        this.stats.range = 350;
         break;
       case 5:
-        this.stats.cooldown = 0.25;
+        this.stats.cooldown = 1.0;
         break;
       case 6:
-        this.stats.damage = 20;
+        this.stats.damage = 40;
         break;
       case 7:
-        this.stats.range = 180;
+        this.stats.range = 400;
         break;
       case 8:
-        this.stats.damage = 25;
-        this.stats.cooldown = 0.2;
+        this.stats.damage = 50;
+        this.stats.cooldown = 0.8;
         break;
     }
   }
 
   protected onEvolve(): void {
-    this.name = '천검난무';
-    this.stats.damage = 40;
+    this.name = '용의 화염';
+    this.stats.damage = 80;
     this.stats.projectileCount = 2;
-    this.stats.range = 220;
-    this.stats.cooldown = 0.15;
+    this.stats.range = 450;
+    this.stats.cooldown = 0.6;
     
-    console.log('Infinite Blade evolved to Thousand Sword Dance!');
+    console.log('FireBall evolved to Dragon Fire!');
   }
 
   public checkEvolution(passiveItems: string[]): boolean {
-    return super.checkEvolution(passiveItems) && passiveItems.includes('닌자 비급');
+    return super.checkEvolution(passiveItems) && passiveItems.includes('증폭의 수정');
   }
 }

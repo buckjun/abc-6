@@ -133,7 +133,7 @@ export class TutorialScene implements Scene {
     // Update weapons and get projectiles
     const playerPos = this.player.getPosition();
     const mousePos = this.game.getInputManager().getMousePosition();
-    const weaponResults = this.weaponManager.update(deltaTime, this.player, this.enemies, mousePos.x, mousePos.y);
+    const weaponResults = this.weaponManager.update(deltaTime, this.player, this.enemies as any[], mousePos.x, mousePos.y);
     
     // Add new bullets and area effects
     this.bullets.push(...weaponResults.bullets);
@@ -420,7 +420,7 @@ export class TutorialScene implements Scene {
     
     // Add new weapons if slots available
     if (this.weaponManager.getAvailableWeaponSlots() > 0) {
-      const availableWeapons = ['수리검', '신성한 영역'];
+      const availableWeapons = ['수리검', '신성한 영역', '화염탄', '얼음 화살'];
       availableWeapons.forEach(weaponType => {
         if (!weapons.some(w => w.getName().includes(weaponType))) {
           options.push({
