@@ -458,21 +458,21 @@ export class TutorialScene implements Scene {
 
   private handleLevelUpMenuClick(x: number, y: number): void {
     const canvas = this.game.getCanvas();
-    const menuX = canvas.width / 2 - 300;
-    const menuY = canvas.height / 2 - 200;
     
-    // Check which option was clicked
+    // Use card-based layout like GameScene
+    const cardWidth = 200;
+    const cardHeight = 120;
+    const spacing = 20;
+    const totalWidth = this.levelUpOptions.length * cardWidth + (this.levelUpOptions.length - 1) * spacing;
+    const startX = (canvas.width - totalWidth) / 2;
+    const startY = (canvas.height - cardHeight) / 2;
+    
+    // Check which card was clicked
     for (let i = 0; i < this.levelUpOptions.length; i++) {
-      const optionY = menuY + 120 + i * 60;
-      const optionBounds = {
-        x: menuX + 20,
-        y: optionY - 25,
-        width: 560,
-        height: 50
-      };
+      const cardX = startX + i * (cardWidth + spacing);
       
-      if (x >= optionBounds.x && x <= optionBounds.x + optionBounds.width &&
-          y >= optionBounds.y && y <= optionBounds.y + optionBounds.height) {
+      if (x >= cardX && x <= cardX + cardWidth &&
+          y >= startY && y <= startY + cardHeight) {
         this.selectLevelUpOption(i);
         break;
       }
@@ -621,6 +621,9 @@ export class TutorialScene implements Scene {
     ctx.fillText(`체력: ${this.player.getHealth()}/100`, 20, canvas.height - 60);
     ctx.fillText(`경험치: ${this.experience}/${this.experienceToNext}`, 20, canvas.height - 40);
     ctx.fillText(`적 수: ${this.enemies.length}`, 20, canvas.height - 20);
+    
+    // Weapon inventory display (bottom right - matching GameScene)
+    this.renderWeaponInventoryUI(ctx);
   }
 
   private renderPlayerStatusGauges(ctx: CanvasRenderingContext2D): void {
@@ -684,85 +687,179 @@ export class TutorialScene implements Scene {
   private renderLevelUpMenu(ctx: CanvasRenderingContext2D): void {
     const canvas = this.game.getCanvas();
     
-    // Light semi-transparent overlay (less intrusive)
+    // Light semi-transparent backdrop (matching GameScene style)
     ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Menu background with improved transparency
-    const menuX = canvas.width / 2 - 300;
-    const menuY = canvas.height / 2 - 200;
-    const menuWidth = 600;
-    const menuHeight = 400;
-    
-    ctx.fillStyle = 'rgba(42, 42, 42, 0.9)';
-    ctx.fillRect(menuX, menuY, menuWidth, menuHeight);
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(menuX, menuY, menuWidth, menuHeight);
-    
+
+    // Use card-based layout like GameScene
+    const cardWidth = 200;
+    const cardHeight = 120;
+    const spacing = 20;
+    const totalWidth = this.levelUpOptions.length * cardWidth + (this.levelUpOptions.length - 1) * spacing;
+    const startX = (canvas.width - totalWidth) / 2;
+    const startY = (canvas.height - cardHeight) / 2;
+
     // Title
     ctx.fillStyle = '#FFD700';
     ctx.font = 'bold 32px "Courier New", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('LEVEL UP!', canvas.width / 2, menuY + 50);
-    
-    // Options with color-coded backgrounds
+    ctx.fillText('LEVEL UP!', canvas.width / 2, startY - 40);
+
+    // Subtitle
+    ctx.fillStyle = '#FFFFFF';
     ctx.font = '18px "Courier New", monospace';
+    ctx.fillText('업그레이드를 선택하세요:', canvas.width / 2, startY - 10);
+
+    // Render options as cards (matching GameScene style)
     this.levelUpOptions.forEach((option, index) => {
-      const optionY = menuY + 120 + index * 60;
+      const cardX = startX + index * (cardWidth + spacing);
       
-      // Color-coded option background based on type
-      let bgColor = '#404040';
+      // Color-coded card background based on type
+      let bgColor = 'rgba(51, 51, 51, 0.9)';
       let borderColor = '#666666';
       if (option.type === 'weapon') {
-        bgColor = 'rgba(70, 130, 180, 0.7)'; // Steel blue for weapons
+        bgColor = 'rgba(70, 130, 180, 0.8)'; // Steel blue for weapons
         borderColor = '#4682B4';
       } else if (option.id && option.id.startsWith('upgrade_')) {
-        bgColor = 'rgba(255, 165, 0, 0.7)'; // Orange for upgrades
+        bgColor = 'rgba(255, 165, 0, 0.8)'; // Orange for upgrades
         borderColor = '#FFA500';
       } else if (option.type === 'passive') {
-        bgColor = 'rgba(50, 205, 50, 0.7)'; // Lime green for passives
+        bgColor = 'rgba(50, 205, 50, 0.8)'; // Lime green for passives
         borderColor = '#32CD32';
       } else if (option.type === 'special') {
-        bgColor = 'rgba(218, 165, 32, 0.7)'; // Gold for special items
+        bgColor = 'rgba(218, 165, 32, 0.8)'; // Gold for special items
         borderColor = '#DAA520';
       }
       
+      // Card background
       ctx.fillStyle = bgColor;
-      ctx.fillRect(menuX + 20, optionY - 25, menuWidth - 40, 50);
-      
-      // Option border
+      ctx.fillRect(cardX, startY, cardWidth, cardHeight);
+
+      // Enhanced card border
       ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(menuX + 20, optionY - 25, menuWidth - 40, 50);
-      
-      // Option text with enhanced visibility
+      ctx.lineWidth = 3;
+      ctx.strokeRect(cardX, startY, cardWidth, cardHeight);
+
+      // Option number with enhanced visibility
       ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 18px "Courier New", monospace';
       ctx.textAlign = 'left';
-      ctx.fillText(`${index + 1}. ${option.name}`, menuX + 40, optionY - 5);
-      ctx.font = '14px "Courier New", monospace';
-      ctx.fillStyle = '#F0F0F0';
-      ctx.fillText(option.description, menuX + 40, optionY + 15);
-      ctx.font = '18px "Courier New", monospace';
+      ctx.fillText(`${index + 1}`, cardX + 10, startY + 25);
       
       // Type indicator
       ctx.fillStyle = borderColor;
-      ctx.font = 'bold 12px "Courier New", monospace';
+      ctx.font = 'bold 10px "Courier New", monospace';
       ctx.textAlign = 'right';
       let typeText = '';
       if (option.type === 'weapon') typeText = '새 무기';
       else if (option.id && option.id.startsWith('upgrade_')) typeText = '강화';
       else if (option.type === 'passive') typeText = '패시브';
       else if (option.type === 'special') typeText = '특수';
-      ctx.fillText(typeText, menuX + menuWidth - 30, optionY - 10);
-      ctx.font = '18px "Courier New", monospace';
+      ctx.fillText(typeText, cardX + cardWidth - 10, startY + 15);
+      
+      // Option title with enhanced readability
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 14px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      const words = option.name.split(' ');
+      words.forEach((word, wordIndex) => {
+        ctx.fillText(word, cardX + cardWidth / 2, startY + 45 + wordIndex * 16);
+      });
+      
+      // Option description with better formatting
+      ctx.fillStyle = '#F0F0F0';
+      ctx.font = '10px "Courier New", monospace';
+      const descWords = option.description.split(' ');
+      let line = '';
+      let lineY = startY + 85;
+      
+      for (let i = 0; i < descWords.length; i++) {
+        const testLine = line + descWords[i] + ' ';
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+        
+        if (testWidth > cardWidth - 20 && i > 0) {
+          ctx.fillText(line, cardX + cardWidth / 2, lineY);
+          line = descWords[i] + ' ';
+          lineY += 12;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, cardX + cardWidth / 2, lineY);
     });
-    
-    // Instructions
-    ctx.fillStyle = '#AAAAAA';
-    ctx.font = '16px "Courier New", monospace';
+
+    // Instructions with improved visibility
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '14px "Courier New", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('숫자 키(1-4)를 눌러 선택하세요', canvas.width / 2, menuY + menuHeight - 30);
+    ctx.fillText('카드를 클릭하거나 숫자 키(1-4)를 눌러 선택하세요', canvas.width / 2, startY + cardHeight + 40);
+  }
+
+  private renderWeaponInventoryUI(ctx: CanvasRenderingContext2D): void {
+    const canvas = this.game.getCanvas();
+    const weapons = this.weaponManager.getWeapons();
+    
+    if (weapons.length === 0) return;
+    
+    const inventoryX = canvas.width - 220;
+    const inventoryY = canvas.height - 200;
+    const slotWidth = 60;
+    const slotHeight = 60;
+    const spacing = 10;
+    
+    // Inventory background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(inventoryX - 10, inventoryY - 40, 200, weapons.length * (slotHeight + spacing) + 30);
+    
+    // Inventory title
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 16px "Courier New", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('무기', inventoryX, inventoryY - 20);
+    
+    // Render weapon slots
+    weapons.forEach((weapon, index) => {
+      const slotX = inventoryX;
+      const slotY = inventoryY + index * (slotHeight + spacing);
+      
+      // Weapon slot background
+      ctx.fillStyle = '#333333';
+      ctx.fillRect(slotX, slotY, slotWidth, slotHeight);
+      
+      // Weapon slot border
+      ctx.strokeStyle = '#666666';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(slotX, slotY, slotWidth, slotHeight);
+      
+      // Weapon icon/placeholder
+      ctx.fillStyle = '#4682B4'; // Blue for weapons
+      ctx.fillRect(slotX + 5, slotY + 5, slotWidth - 10, slotHeight - 10);
+      
+      // Weapon level indicator
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 12px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(weapon.getLevel().toString(), slotX + slotWidth / 2, slotY + slotHeight - 5);
+      
+      // Weapon name
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '12px "Courier New", monospace';
+      ctx.textAlign = 'left';
+      const weaponName = weapon.getName();
+      const shortName = weaponName.length > 8 ? weaponName.substring(0, 6) + '..' : weaponName;
+      ctx.fillText(shortName, slotX + slotWidth + 5, slotY + 15);
+      
+      // Weapon level text
+      ctx.fillStyle = '#CCCCCC';
+      ctx.font = '10px "Courier New", monospace';
+      ctx.fillText(`Lv.${weapon.getLevel()}`, slotX + slotWidth + 5, slotY + 30);
+      
+      // Weapon type indicator
+      ctx.fillStyle = '#AAAAAA';
+      ctx.font = '10px "Courier New", monospace';
+      ctx.fillText(`무기`, slotX + slotWidth + 5, slotY + 45);
+    });
   }
 
   private renderEndScreen(ctx: CanvasRenderingContext2D): void {
