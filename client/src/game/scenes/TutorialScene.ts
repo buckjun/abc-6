@@ -111,8 +111,8 @@ export class TutorialScene implements Scene {
     // Update player
     this.player.update(deltaTime);
     
-    // Spawn boss at 4:30 (30 seconds before end)
-    if (!this.bossSpawned && this.gameTime >= 270) { // 4.5 minutes
+    // Spawn boss at 30 seconds (for testing)
+    if (!this.bossSpawned && this.gameTime >= 30) { // 30 seconds for testing
       this.spawnBoss();
       this.bossSpawned = true;
     }
