@@ -6,6 +6,7 @@ export class InputManager {
   private mouseY: number = 0;
   private canvas: HTMLCanvasElement | null = null;
   private pressedKeys: Set<string> = new Set(); // Track single key presses
+  private mousePressed: boolean = false; // Track mouse click state
 
   constructor() {
     this.init();
@@ -27,6 +28,8 @@ export class InputManager {
 
     this.canvas.addEventListener('mousemove', this.handleMouseMove);
     this.canvas.addEventListener('click', this.handleMouseClick);
+    this.canvas.addEventListener('mousedown', this.handleMouseDown);
+    this.canvas.addEventListener('mouseup', this.handleMouseUp);
     console.log('Mouse tracking enabled');
   }
 
@@ -55,6 +58,14 @@ export class InputManager {
     this.mouseClickHandlers.forEach(handler => {
       handler(clickX, clickY);
     });
+  };
+
+  private handleMouseDown = (event: MouseEvent): void => {
+    this.mousePressed = true;
+  };
+
+  private handleMouseUp = (event: MouseEvent): void => {
+    this.mousePressed = false;
   };
 
   private handleKeyDown = (event: KeyboardEvent): void => {
@@ -122,6 +133,14 @@ export class InputManager {
     this.keyPressHandlers.delete(key);
   }
 
+  public isMousePressed(): boolean {
+    const pressed = this.mousePressed;
+    if (pressed) {
+      this.mousePressed = false; // Reset after checking
+    }
+    return pressed;
+  }
+
   public getMousePosition(): { x: number; y: number } {
     return { x: this.mouseX, y: this.mouseY };
   }
@@ -137,6 +156,8 @@ export class InputManager {
     if (this.canvas) {
       this.canvas.removeEventListener('mousemove', this.handleMouseMove);
       this.canvas.removeEventListener('click', this.handleMouseClick);
+      this.canvas.removeEventListener('mousedown', this.handleMouseDown);
+      this.canvas.removeEventListener('mouseup', this.handleMouseUp);
     }
     
     this.keys.clear();

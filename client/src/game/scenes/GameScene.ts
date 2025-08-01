@@ -137,11 +137,15 @@ export class GameScene implements Scene {
   update(deltaTime: number): void {
     // Handle game over menu
     if (this.showGameOverMenu) {
-      // Check for restart input
-      if (this.game.getInputManager().isKeyPressed('r') || this.game.getInputManager().isKeyPressed('KeyR')) {
+      // Check for restart input - check both key codes and key names
+      if (this.game.getInputManager().isKeyPressed('r') || this.game.getInputManager().isKeyPressed('R') || 
+          this.game.getInputManager().isKeyDown('KeyR')) {
         this.restart();
-      } else if (this.game.getInputManager().isKeyPressed('Escape')) {
+        return;
+      } else if (this.game.getInputManager().isKeyPressed('Escape') || 
+                 this.game.getInputManager().isKeyDown('Escape')) {
         this.game.switchScene('mainmenu');
+        return;
       }
       
       // Handle mouse clicks on game over menu
