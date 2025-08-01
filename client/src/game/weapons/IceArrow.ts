@@ -18,81 +18,130 @@ export class IceArrow extends WeaponBase {
 
   protected fire(player: Player, enemies: (Enemy | EnemyBase)[], mouseX: number, mouseY: number): Bullet[] {
     const playerPos = player.getPosition();
+    const bullets: Bullet[] = [];
     
-    // Find closest enemy
-    let closestEnemy: (Enemy | EnemyBase) | null = null;
-    let closestDistance = Infinity;
+    // Create directional arrows based on level
+    const directions = this.getDirections();
     
-    enemies.forEach(enemy => {
-      if (!enemy.isAlive()) return;
+    directions.forEach(direction => {
+      // Calculate target position based on direction
+      const targetX = playerPos.x + direction.x * this.stats.range!;
+      const targetY = playerPos.y + direction.y * this.stats.range!;
       
-      const enemyPos = enemy.getPosition();
-      const distance = Math.sqrt(
-        Math.pow(enemyPos.x - playerPos.x, 2) + 
-        Math.pow(enemyPos.y - playerPos.y, 2)
+      const bullet = new Bullet(
+        playerPos.x,
+        playerPos.y,
+        targetX,
+        targetY,
+        this.stats.damage,
+        400 // Fast arrow
       );
       
-      if (distance < closestDistance && distance <= this.stats.range!) {
-        closestDistance = distance;
-        closestEnemy = enemy;
-      }
+      bullet.setColor('#87CEEB'); // Sky blue ice arrow
+      bullet.setPenetrating(true); // Ice arrows pierce through enemies
+      bullets.push(bullet);
     });
     
-    if (!closestEnemy) return [];
+    console.log(`Ice Arrow fired: ${bullets.length} arrows with damage: ${this.stats.damage}`);
     
-    // Create ice arrow projectile
-    const targetPos = closestEnemy.getPosition();
+    return bullets;
+  }
+
+  private getDirections(): { x: number; y: number }[] {
+    const directions: { x: number; y: number }[] = [];
     
-    const bullet = new Bullet(
-      playerPos.x,
-      playerPos.y,
-      targetPos.x,
-      targetPos.y,
-      this.stats.damage,
-      400 // Fast arrow
-    );
+    switch (this.level) {
+      case 1:
+        // Level 1: 1개 x축 오른쪽
+        directions.push({ x: 1, y: 0 });
+        break;
+      case 2:
+        // Level 2: x축 양방향
+        directions.push({ x: 1, y: 0 }, { x: -1, y: 0 });
+        break;
+      case 3:
+        // Level 3: x축 양방향 + y축 위쪽
+        directions.push({ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: -1 });
+        break;
+      case 4:
+        // Level 4: x축 양방향 + y축 양방향
+        directions.push({ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 });
+        break;
+      case 5:
+        // Level 5: 4방향 + 대각선 4방향
+        directions.push(
+          { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 },
+          { x: 0.707, y: -0.707 }, { x: 0.707, y: 0.707 }, { x: -0.707, y: -0.707 }, { x: -0.707, y: 0.707 }
+        );
+        break;
+      case 6:
+        // Level 6: 8방향 + 추가 중간 방향
+        directions.push(
+          { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 },
+          { x: 0.707, y: -0.707 }, { x: 0.707, y: 0.707 }, { x: -0.707, y: -0.707 }, { x: -0.707, y: 0.707 },
+          { x: 0.5, y: -0.866 }, { x: 0.5, y: 0.866 }, { x: -0.5, y: -0.866 }, { x: -0.5, y: 0.866 }
+        );
+        break;
+      case 7:
+        // Level 7: 12방향
+        for (let i = 0; i < 12; i++) {
+          const angle = (i * Math.PI * 2) / 12;
+          directions.push({ x: Math.cos(angle), y: Math.sin(angle) });
+        }
+        break;
+      case 8:
+        // Level 8: 16방향
+        for (let i = 0; i < 16; i++) {
+          const angle = (i * Math.PI * 2) / 16;
+          directions.push({ x: Math.cos(angle), y: Math.sin(angle) });
+        }
+        break;
+      default:
+        // Evolution: 20방향
+        for (let i = 0; i < 20; i++) {
+          const angle = (i * Math.PI * 2) / 20;
+          directions.push({ x: Math.cos(angle), y: Math.sin(angle) });
+        }
+        break;
+    }
     
-    bullet.setColor('#87CEEB'); // Sky blue ice arrow
-    bullet.setPenetrating(true); // Ice arrows pierce through enemies
-    
-    console.log(`Ice Arrow fired with damage: ${this.stats.damage}`);
-    
-    return [bullet];
+    return directions;
   }
 
   protected updateStats(): void {
     switch (this.level) {
       case 2:
-        this.stats.damage = 18;
+        this.stats.damage = 15;
         break;
       case 3:
-        this.stats.cooldown = 0.6;
+        this.stats.cooldown = 0.7;
+        this.stats.damage = 18;
         break;
       case 4:
-        this.stats.damage = 25;
+        this.stats.damage = 20;
         this.stats.range = 450;
         break;
       case 5:
-        this.stats.projectileCount = 2;
+        this.stats.cooldown = 0.6;
+        this.stats.damage = 22;
         break;
       case 6:
-        this.stats.damage = 32;
+        this.stats.damage = 25;
         break;
       case 7:
         this.stats.cooldown = 0.5;
-        this.stats.range = 500;
+        this.stats.damage = 28;
         break;
       case 8:
-        this.stats.damage = 40;
-        this.stats.projectileCount = 3;
+        this.stats.damage = 30;
+        this.stats.range = 500;
         break;
     }
   }
 
   protected onEvolve(): void {
     this.name = '빙하의 창';
-    this.stats.damage = 70;
-    this.stats.projectileCount = 4;
+    this.stats.damage = 40;
     this.stats.range = 600;
     this.stats.cooldown = 0.4;
     

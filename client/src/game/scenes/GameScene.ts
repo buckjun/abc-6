@@ -194,11 +194,11 @@ export class GameScene implements Scene {
     // Update player
     this.player.update(deltaTime);
 
-    // Wave-based enemy spawning
+    // Time-based enemy spawning with increasing difficulty
     this.spawnTimer += deltaTime;
-    const waveSpawnInterval = this.waveManager.getSpawnInterval();
-    if (this.spawnTimer >= waveSpawnInterval) {
-      this.spawnEnemiesFromWave();
+    const currentSpawnInterval = this.getSpawnInterval();
+    if (this.spawnTimer >= currentSpawnInterval) {
+      this.spawnEnemiesByTime();
       this.spawnTimer = 0;
     }
 
@@ -647,16 +647,16 @@ export class GameScene implements Scene {
     const timeMinutes = this.gameTime / 60;
     let interval = this.baseSpawnInterval;
     
-    if (timeMinutes >= 20) {
-      interval = 0.3; // Very fast spawning after 20 minutes
-    } else if (timeMinutes >= 15) {
-      interval = 0.5; // Fast spawning after 15 minutes
+    if (timeMinutes >= 15) {
+      interval = 0.3; // Very fast spawning after 15 minutes
     } else if (timeMinutes >= 10) {
-      interval = 0.8; // Medium-fast spawning after 10 minutes
-    } else if (timeMinutes >= 5) {
-      interval = 1.2; // Medium spawning after 5 minutes
-    } else if (timeMinutes >= 1.5) { // Changed from 3 to 1.5 minutes
-      interval = 1.8; // Start increasing spawn rate at 1.5 minutes
+      interval = 0.5; // Fast spawning after 10 minutes
+    } else if (timeMinutes >= 6) {
+      interval = 0.8; // Medium-fast spawning after 6 minutes
+    } else if (timeMinutes >= 3) {
+      interval = 1.2; // Medium spawning after 3 minutes
+    } else if (timeMinutes >= 1) { // Start difficulty increase at 1 minute
+      interval = 1.6; // Slightly faster spawning after 1 minute
     }
     
     return interval;
@@ -666,39 +666,40 @@ export class GameScene implements Scene {
     const timeMinutes = this.gameTime / 60;
     const canvas = this.game.getCanvas();
     
-    // Determine spawn count based on time
+    // Determine spawn count based on time - more aggressive scaling
     let spawnCount = 1;
-    if (timeMinutes >= 10) spawnCount = 3;
-    else if (timeMinutes >= 5) spawnCount = 2;
+    if (timeMinutes >= 8) spawnCount = 4;
+    else if (timeMinutes >= 5) spawnCount = 3;
+    else if (timeMinutes >= 2) spawnCount = 2;
     
     for (let i = 0; i < spawnCount; i++) {
       const spawnPos = this.getRandomSpawnPosition(canvas);
       
-      if (timeMinutes < 5) {
-        // Early game: Slimes and Bats
-        if (Math.random() < 0.7) {
+      if (timeMinutes < 3) {
+        // Early game: Slimes and Bats (increased difficulty earlier)
+        if (Math.random() < 0.6) {
           this.spawnSlime(spawnPos.x, spawnPos.y);
         } else {
           this.spawnBat(spawnPos.x, spawnPos.y);
         }
-      } else if (timeMinutes < 15) {
-        // Mid game: Add Skeleton Soldiers and Goblin Shamans
+      } else if (timeMinutes < 8) {
+        // Mid game: Add stronger enemies earlier
         const rand = Math.random();
-        if (rand < 0.3) {
+        if (rand < 0.25) {
           this.spawnSlime(spawnPos.x, spawnPos.y);
-        } else if (rand < 0.5) {
+        } else if (rand < 0.45) {
           this.spawnBat(spawnPos.x, spawnPos.y);
-        } else if (rand < 0.8) {
+        } else if (rand < 0.75) {
           this.spawnSkeletonSoldier(spawnPos.x, spawnPos.y);
         } else {
           this.spawnGoblinShaman(spawnPos.x, spawnPos.y);
         }
       } else {
-        // Late game: All enemy types
+        // Late game: Heavily weighted towards strong enemies
         const rand = Math.random();
-        if (rand < 0.2) {
+        if (rand < 0.15) {
           this.spawnSlime(spawnPos.x, spawnPos.y);
-        } else if (rand < 0.35) {
+        } else if (rand < 0.25) {
           this.spawnBat(spawnPos.x, spawnPos.y);
         } else if (rand < 0.6) {
           this.spawnSkeletonSoldier(spawnPos.x, spawnPos.y);
