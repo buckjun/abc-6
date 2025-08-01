@@ -26,28 +26,33 @@ export abstract class EnemyBase {
   render(ctx: CanvasRenderingContext2D): void {
     if (!this.alive) return;
 
-    // Draw enemy body
-    ctx.fillStyle = this.color;
-    ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+    // Only draw health bar and effects (no enemy body - that's handled by subclasses)
+    
+    // Draw health bar if damaged
+    if (this.health < this.maxHealth) {
+      const barWidth = this.width;
+      const barHeight = 6;
+      const healthPercent = this.health / this.maxHealth;
 
-    // Draw health bar
-    const barWidth = this.width;
-    const barHeight = 6;
-    const healthPercent = this.health / this.maxHealth;
+      // Background
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 15, barWidth, barHeight);
 
-    // Background
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 12, barWidth, barHeight);
-
-    // Health
-    ctx.fillStyle = healthPercent > 0.5 ? '#00FF00' : healthPercent > 0.25 ? '#FFFF00' : '#FF0000';
-    ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 12, barWidth * healthPercent, barHeight);
+      // Health
+      ctx.fillStyle = healthPercent > 0.5 ? '#00FF00' : healthPercent > 0.25 ? '#FFFF00' : '#FF0000';
+      ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 15, barWidth * healthPercent, barHeight);
+    }
 
     // Slow effect indicator
     if (this.slowEffect < 1) {
-      ctx.strokeStyle = '#0066FF';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(this.x - this.width/2 - 2, this.y - this.height/2 - 2, this.width + 4, this.height + 4);
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = '#00CCFF';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.width/2 + 8, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
     }
   }
 

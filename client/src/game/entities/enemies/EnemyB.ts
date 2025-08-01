@@ -89,7 +89,7 @@ export class EnemyB extends EnemyBase {
     
     ctx.restore();
 
-    // Call parent for health bar and effects
+    // Call parent for health bar and effects (no enemy body drawn in parent)
     super.render(ctx);
   }
 }
