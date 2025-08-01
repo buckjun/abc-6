@@ -97,6 +97,11 @@ export abstract class EnemyBase {
     return this.experienceValue;
   }
 
+  getScoreValue(): number {
+    // Base score calculation for new enemy system
+    return Math.max(10, this.maxHealth / 2);
+  }
+
   protected moveTowardsPlayer(deltaTime: number, playerX: number, playerY: number): void {
     const dx = playerX - this.x;
     const dy = playerY - this.y;

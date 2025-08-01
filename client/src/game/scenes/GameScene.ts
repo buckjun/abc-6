@@ -47,6 +47,12 @@ export class GameScene implements Scene {
   private showLevelUpMenu: boolean = false;
   private levelUpOptions: LevelUpOption[] = [];
   private selectedOptionIndex: number = 0;
+  
+  // Score system
+  private score: number = 0;
+  private enemiesKilled: number = 0;
+  private gameOver: boolean = false;
+  private showGameOverMenu: boolean = false;
 
   constructor(game: Game) {
     this.game = game;
@@ -86,6 +92,10 @@ export class GameScene implements Scene {
     this.reaperSpawned = false;
     this.gamePaused = false;
     this.hasExperienceMagnet = false;
+    this.score = 0;
+    this.enemiesKilled = 0;
+    this.gameOver = false;
+    this.showGameOverMenu = false;
     this.waveManager.reset();
     
     // Clear all weapons and add only Magic Orb
@@ -125,6 +135,23 @@ export class GameScene implements Scene {
   }
 
   update(deltaTime: number): void {
+    // Handle game over menu
+    if (this.showGameOverMenu) {
+      // Check for restart input
+      if (this.game.getInputManager().isKeyPressed('r') || this.game.getInputManager().isKeyPressed('KeyR')) {
+        this.restart();
+      } else if (this.game.getInputManager().isKeyPressed('Escape')) {
+        this.game.switchScene('mainmenu');
+      }
+      
+      // Handle mouse clicks on game over menu
+      if (this.game.getInputManager().isMousePressed()) {
+        this.handleGameOverMenuClick();
+      }
+      
+      return;
+    }
+
     // Handle level up menu interactions
     if (this.showLevelUpMenu) {
       // Check for number key inputs
@@ -140,7 +167,7 @@ export class GameScene implements Scene {
       return; // Game is paused during level up
     }
 
-    if (this.gamePaused) return;
+    if (this.gamePaused || this.gameOver) return;
 
     this.gameTime += deltaTime;
     this.waveManager.update(deltaTime);
@@ -264,8 +291,8 @@ export class GameScene implements Scene {
     }
 
     // Check game over
-    if (this.player.getHealth() <= 0) {
-      this.gameOver();
+    if (this.player.getHealth() <= 0 && !this.gameOver) {
+      this.handleGameOver();
     }
   }
 
@@ -870,6 +897,14 @@ export class GameScene implements Scene {
           
           this.game.getAudioManager().playSound('/sounds/hit.mp3');
           console.log(`Enemy hit by bullet for ${bullet.getDamage()} damage`);
+          
+          // Check if enemy died and add score  
+          if (!enemy.isAlive()) {
+            this.dropExperienceGem(enemy.getPosition().x, enemy.getPosition().y, enemy.getExperienceValue());
+            this.addScore(enemy.getScoreValue());
+            this.enemiesKilled++;
+            console.log(`Enemy killed! Score: +${enemy.getScoreValue()}, Total kills: ${this.enemiesKilled}`);
+          }
         }
       });
 
@@ -895,6 +930,9 @@ export class GameScene implements Scene {
           // Drop experience gem when enemy dies
           if (!enemy.isAlive()) {
             this.dropExperienceGem(enemy.getPosition().x, enemy.getPosition().y, enemy.getExperienceValue());
+            this.addScore(enemy.getScoreValue());
+            this.enemiesKilled++;
+            console.log(`Enemy killed! Score: +${enemy.getScoreValue()}, Total kills: ${this.enemiesKilled}`);
             
             // Check for treasure drop from Ogre
             if (enemy instanceof Ogre && enemy.shouldDropTreasure()) {
@@ -966,10 +1004,84 @@ export class GameScene implements Scene {
     this.treasureChests = this.treasureChests.filter(chest => chest.isAlive());
   }
 
-  private gameOver(): void {
-    console.log('Game Over!');
+  private addScore(points: number): void {
+    this.score += points;
+  }
+
+  private calculateFinalScore(): number {
+    const timeBonus = Math.floor(this.gameTime * 10); // 10 points per second
+    const killBonus = this.enemiesKilled * 50; // 50 points per kill
+    const levelBonus = (this.playerLevel - 1) * 100; // 100 points per level
+    return this.score + timeBonus + killBonus + levelBonus;
+  }
+
+  private handleGameOver(): void {
+    this.gameOver = true;
+    this.showGameOverMenu = true;
     this.game.getAudioManager().stopBackgroundMusic();
-    this.game.switchScene('mainmenu');
+    console.log('Game Over!');
+  }
+
+  private restart(): void {
+    this.init();
+  }
+
+  private renderGameOverMenu(ctx: CanvasRenderingContext2D): void {
+    const canvas = this.game.getCanvas();
+    
+    // Dark overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Game Over title
+    ctx.fillStyle = '#FF4444';
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('게임 오버', canvas.width / 2, canvas.height / 2 - 150);
+    
+    // Calculate final score
+    const finalScore = this.calculateFinalScore();
+    const survivalTime = Math.floor(this.gameTime);
+    const timeBonus = Math.floor(this.gameTime * 10);
+    const killBonus = this.enemiesKilled * 50;
+    const levelBonus = (this.playerLevel - 1) * 100;
+    
+    // Score breakdown
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '24px Arial';
+    ctx.fillText(`생존 시간: ${survivalTime}초 (보너스: ${timeBonus}점)`, canvas.width / 2, canvas.height / 2 - 80);
+    ctx.fillText(`적 처치: ${this.enemiesKilled}마리 (보너스: ${killBonus}점)`, canvas.width / 2, canvas.height / 2 - 40);
+    ctx.fillText(`레벨: ${this.playerLevel} (보너스: ${levelBonus}점)`, canvas.width / 2, canvas.height / 2);
+    
+    // Final score
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 32px Arial';
+    ctx.fillText(`최종 점수: ${finalScore}점`, canvas.width / 2, canvas.height / 2 + 60);
+    
+    // Instructions
+    ctx.fillStyle = '#CCCCCC';
+    ctx.font = '20px Arial';
+    ctx.fillText('R키를 눌러 다시 시작', canvas.width / 2, canvas.height / 2 + 120);
+    ctx.fillText('ESC키를 눌러 메인 메뉴로', canvas.width / 2, canvas.height / 2 + 150);
+  }
+
+  private handleGameOverMenuClick(): void {
+    const mousePos = this.game.getInputManager().getMousePosition();
+    const canvas = this.game.getCanvas();
+    
+    // Check if clicked on restart area (around the restart text)
+    const restartTextY = canvas.height / 2 + 120;
+    if (mousePos.y >= restartTextY - 20 && mousePos.y <= restartTextY + 20) {
+      this.restart();
+      return;
+    }
+    
+    // Check if clicked on menu area (around the menu text)
+    const menuTextY = canvas.height / 2 + 150;
+    if (mousePos.y >= menuTextY - 20 && mousePos.y <= menuTextY + 20) {
+      this.game.switchScene('mainmenu');
+      return;
+    }
   }
 
   render(ctx: CanvasRenderingContext2D): void {
@@ -1054,6 +1166,11 @@ export class GameScene implements Scene {
     // Render level up menu if active
     if (this.showLevelUpMenu) {
       this.renderLevelUpMenu(ctx);
+    }
+
+    // Render game over menu if active
+    if (this.showGameOverMenu) {
+      this.renderGameOverMenu(ctx);
     }
   }
 

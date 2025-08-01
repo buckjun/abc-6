@@ -12,6 +12,8 @@ export class Enemy {
   private alive: boolean = true;
   private color: string;
   private slowEffect: { multiplier: number; duration: number } | null = null;
+  private type: string = 'basic';
+  private experienceValue: number = 10;
 
   constructor(x: number, y: number, health: number = 1) {
     this.x = x;
@@ -20,6 +22,15 @@ export class Enemy {
     this.maxHealth = health;
     this.baseSpeed = 50;
     this.speed = this.baseSpeed;
+    
+    // Set enemy type based on health for score calculation
+    if (health <= 25) this.type = 'slime';
+    else if (health <= 50) this.type = 'bat';
+    else if (health <= 100) this.type = 'skeleton';
+    else if (health <= 200) this.type = 'goblin';
+    else this.type = 'ogre';
+    
+    this.experienceValue = Math.max(10, health / 2);
     
     // Random enemy color variation
     const colors = ['#8B4513', '#654321', '#A0522D'];
@@ -158,5 +169,21 @@ export class Enemy {
 
   getMaxHealth(): number {
     return this.maxHealth;
+  }
+
+  getExperienceValue(): number {
+    return this.experienceValue;
+  }
+
+  getScoreValue(): number {
+    // Score is based on enemy health and difficulty
+    switch (this.type) {
+      case 'slime': return 10;
+      case 'bat': return 15;
+      case 'skeleton': return 25;
+      case 'goblin': return 30;
+      case 'ogre': return 100;
+      default: return 10;
+    }
   }
 }
