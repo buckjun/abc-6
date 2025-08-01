@@ -28,6 +28,12 @@ Preferred communication style: Simple, everyday language.
   - **Damage Reduction**: Initial damage 8→3, max level damage 25→10
   - **Hit Frequency**: Increased cooldown from 0.33s to 2.0s for less overwhelming DPS
   - **Gradual Progression**: Smoother damage scaling across weapon levels
+- **Revolutionary Character Design**: Completely transformed player and enemy visuals:
+  - **Player**: Crystalline energy being with health-based aura, energy particles, and movement trails
+  - **Enemy A**: Demonic swift attacker with flame effects, organic shape, horns, and speed trails
+  - **Enemy B**: Mechanical armored golem with hexagonal design, steam vents, and warning lights
+  - **Enemy C**: Bio-mechanical spider with electrical discharge, organic tentacles, and multiple eyes
+  - **Dynamic Effects**: All entities feature animation, pulsing, and contextual visual feedback
 
 ## Gameplay Balance Improvements (January 31, 2025)
 - Sacred Ground weapon damage interval increased from 1.0 to 2.0 seconds for better enemy movement flow

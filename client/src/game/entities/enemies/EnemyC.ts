@@ -39,35 +39,93 @@ export class EnemyC extends EnemyBase {
   render(ctx: CanvasRenderingContext2D): void {
     if (!this.alive) return;
 
-    // Draw C enemy as a diamond (aggressive look)
-    ctx.fillStyle = this.color;
+    ctx.save();
+    
+    // Bio-mechanical spider/scorpion hybrid
+    const agitationTime = Date.now() * 0.008;
+    const agitation = Math.sin(agitationTime) * 3;
+    
+    // Danger field (electrical discharge)
+    ctx.strokeStyle = `rgba(68, 255, 68, ${Math.abs(Math.sin(agitationTime * 2)) * 0.6})`;
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 8; i++) {
+      const angle = (i * Math.PI * 2) / 8;
+      const innerRadius = this.width/2 + 5;
+      const outerRadius = innerRadius + 8;
+      ctx.beginPath();
+      ctx.moveTo(
+        this.x + Math.cos(angle) * innerRadius,
+        this.y + Math.sin(angle) * innerRadius
+      );
+      ctx.lineTo(
+        this.x + Math.cos(angle) * outerRadius + agitation,
+        this.y + Math.sin(angle) * outerRadius + agitation
+      );
+      ctx.stroke();
+    }
+    
+    // Multiple organic tentacles/legs
+    ctx.strokeStyle = '#44FF44';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * Math.PI * 2) / 6;
+      const tentacleLength = 12;
+      const wiggle = Math.sin(agitationTime + i) * 3;
+      
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.quadraticCurveTo(
+        this.x + Math.cos(angle) * (tentacleLength/2) + wiggle,
+        this.y + Math.sin(angle) * (tentacleLength/2) + wiggle,
+        this.x + Math.cos(angle) * tentacleLength,
+        this.y + Math.sin(angle) * tentacleLength
+      );
+      ctx.stroke();
+      
+      // Tentacle tips
+      ctx.fillStyle = '#66FF66';
+      ctx.beginPath();
+      ctx.arc(
+        this.x + Math.cos(angle) * tentacleLength,
+        this.y + Math.sin(angle) * tentacleLength,
+        2, 0, Math.PI * 2
+      );
+      ctx.fill();
+    }
+    
+    // Central bio-mass body
+    ctx.fillStyle = '#44FF44';
     ctx.beginPath();
-    ctx.moveTo(this.x, this.y - this.height/2); // Top
-    ctx.lineTo(this.x + this.width/2, this.y); // Right
-    ctx.lineTo(this.x, this.y + this.height/2); // Bottom
-    ctx.lineTo(this.x - this.width/2, this.y); // Left
+    // Organic blob shape
+    for (let i = 0; i < 8; i++) {
+      const angle = (i * Math.PI * 2) / 8;
+      const radius = this.width/2 + Math.sin(agitationTime + i * 0.5) * 2;
+      const x = this.x + Math.cos(angle) * radius;
+      const y = this.y + Math.sin(angle) * radius;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
     ctx.closePath();
     ctx.fill();
-
-    // Add spikes for dangerous look
-    ctx.fillStyle = '#66FF66';
-    const spikeSize = 4;
-    ctx.fillRect(this.x - spikeSize/2, this.y - this.height/2 - spikeSize, spikeSize, spikeSize); // Top spike
-    ctx.fillRect(this.x + this.width/2, this.y - spikeSize/2, spikeSize, spikeSize); // Right spike
-    ctx.fillRect(this.x - spikeSize/2, this.y + this.height/2, spikeSize, spikeSize); // Bottom spike
-    ctx.fillRect(this.x - this.width/2 - spikeSize, this.y - spikeSize/2, spikeSize, spikeSize); // Left spike
-
-    // Pulsing effect for danger
-    const pulse = Math.sin(Date.now() * 0.01) * 0.5 + 0.5;
-    ctx.strokeStyle = `rgba(255, 0, 0, ${pulse})`;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Label
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 12px "Courier New", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('C', this.x, this.y + 4);
+    
+    // Toxic core
+    ctx.fillStyle = '#FFFF00';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Multiple eyes
+    ctx.fillStyle = '#FF0000';
+    for (let i = 0; i < 4; i++) {
+      const angle = (i * Math.PI * 2) / 4;
+      const eyeX = this.x + Math.cos(angle) * 6;
+      const eyeY = this.y + Math.sin(angle) * 6;
+      ctx.beginPath();
+      ctx.arc(eyeX, eyeY, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.restore();
 
     // Call parent for health bar and effects
     super.render(ctx);

@@ -35,58 +35,77 @@ export class Player {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    // Draw player as a modern hero character
-    ctx.fillStyle = '#4169E1'; // Royal blue main body
-    ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+    ctx.save();
     
-    // Hero armor details
-    ctx.fillStyle = '#FFD700'; // Gold accents
-    ctx.fillRect(this.x - this.width/2 + 4, this.y - this.height/2 + 4, this.width - 8, 4); // Top armor
-    ctx.fillRect(this.x - this.width/2 + 4, this.y + this.height/2 - 8, this.width - 8, 4); // Bottom armor
+    // Health-based energy aura
+    const healthPercent = this.health / this.maxHealth;
+    const pulseTime = Date.now() * 0.005;
+    const pulseIntensity = Math.sin(pulseTime) * 0.3 + 0.7;
     
-    // Hero cape
-    ctx.fillStyle = '#DC143C'; // Red cape
-    ctx.fillRect(this.x - this.width/2 - 2, this.y - this.height/2 + 6, 4, this.height - 12);
+    // Outer energy ring
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 20, 0, Math.PI * 2);
+    ctx.strokeStyle = healthPercent > 0.6 ? `rgba(0, 255, 255, ${pulseIntensity * 0.4})` : 
+                      healthPercent > 0.3 ? `rgba(255, 255, 0, ${pulseIntensity * 0.4})` : 
+                                           `rgba(255, 0, 0, ${pulseIntensity * 0.4})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
     
-    // Weapon indicator (sword)
-    ctx.fillStyle = '#C0C0C0'; // Silver sword
-    ctx.fillRect(this.x + this.width/2, this.y - 8, 2, 16);
-    ctx.fillStyle = '#8B4513'; // Brown handle
-    ctx.fillRect(this.x + this.width/2 - 1, this.y + 6, 4, 6);
+    // Main crystalline body with faceted look
+    ctx.fillStyle = '#00FFFF'; // Bright cyan crystal
+    ctx.beginPath();
+    // Create diamond/crystal shape
+    ctx.moveTo(this.x, this.y - 12); // Top
+    ctx.lineTo(this.x + 8, this.y - 4); // Top right
+    ctx.lineTo(this.x + 6, this.y + 8); // Bottom right
+    ctx.lineTo(this.x, this.y + 12); // Bottom
+    ctx.lineTo(this.x - 6, this.y + 8); // Bottom left
+    ctx.lineTo(this.x - 8, this.y - 4); // Top left
+    ctx.closePath();
+    ctx.fill();
     
-    // Hero emblem
+    // Crystal facet highlights
     ctx.fillStyle = '#FFFFFF';
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(this.x - 2, this.y - 8);
+    ctx.lineTo(this.x + 4, this.y - 6);
+    ctx.lineTo(this.x + 2, this.y + 2);
+    ctx.lineTo(this.x - 4, this.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    
+    // Inner core glow
+    ctx.fillStyle = healthPercent > 0.6 ? '#40E0D0' : 
+                    healthPercent > 0.3 ? '#FFD700' : '#FF6347';
     ctx.beginPath();
     ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
     ctx.fill();
     
-    // Health indicator glow
-    const healthPercent = this.health / this.maxHealth;
-    if (healthPercent < 0.3) {
-      ctx.shadowColor = '#FF0000';
-      ctx.shadowBlur = 10;
-    } else if (healthPercent < 0.6) {
-      ctx.shadowColor = '#FFFF00';
-      ctx.shadowBlur = 5;
-    } else {
-      ctx.shadowColor = '#00FF00';
-      ctx.shadowBlur = 3;
-    }
-    
-    // Redraw main body with glow
-    ctx.fillStyle = '#4169E1';
-    ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
-    ctx.shadowBlur = 0;
-
-    // Direction indicator (small arrow)
-    if (this.moveX !== 0 || this.moveY !== 0) {
-      ctx.fillStyle = '#FFD700';
+    // Energy particles around player
+    for (let i = 0; i < 4; i++) {
+      const angle = (pulseTime + i * Math.PI / 2) % (Math.PI * 2);
+      const particleX = this.x + Math.cos(angle) * 15;
+      const particleY = this.y + Math.sin(angle) * 15;
+      
+      ctx.fillStyle = `rgba(0, 255, 255, ${pulseIntensity * 0.6})`;
       ctx.beginPath();
-      const arrowX = this.x + this.moveX * 20;
-      const arrowY = this.y + this.moveY * 20;
-      ctx.arc(arrowX, arrowY, 4, 0, Math.PI * 2);
+      ctx.arc(particleX, particleY, 2, 0, Math.PI * 2);
       ctx.fill();
     }
+    
+    // Movement trail effect
+    if (this.moveX !== 0 || this.moveY !== 0) {
+      ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(this.x - this.moveX * 20, this.y - this.moveY * 20);
+      ctx.lineTo(this.x, this.y);
+      ctx.stroke();
+    }
+    
+    ctx.restore();
   }
 
   takeDamage(damage: number): void {
