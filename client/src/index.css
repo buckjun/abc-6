@@ -2,6 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/* PWA and Mobile optimizations */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent zoom on mobile */
+@media screen and (max-width: 768px) {
+  html {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+  
+  body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* Game canvas touch optimization */
+canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* PWA display optimizations */
+@media (display-mode: fullscreen) {
+  body {
+    background: #1A1A2E;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

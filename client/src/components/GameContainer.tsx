@@ -1,13 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Game } from '../game/Game';
+import { TouchControls } from './TouchControls';
+import { useIsMobile } from '../hooks/use-is-mobile';
 
 const GameContainer = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<Game | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (canvasRef.current && !gameRef.current) {
       gameRef.current = new Game(canvasRef.current);
+      setGameStarted(true);
     }
 
     return () => {
@@ -25,7 +30,7 @@ const GameContainer = () => {
       maxWidth: '100vw',
       maxHeight: '100vh',
       backgroundColor: '#1A1A1A',
-      border: '2px solid #8B4513',
+      border: isMobile ? 'none' : '2px solid #8B4513',
       position: 'relative'
     }}>
       <canvas
@@ -36,9 +41,11 @@ const GameContainer = () => {
           width: '100%',
           height: '100%',
           display: 'block',
-          imageRendering: 'pixelated'
+          imageRendering: 'pixelated',
+          touchAction: 'none' // Prevent default touch behaviors
         }}
       />
+      <TouchControls visible={gameStarted && isMobile} />
     </div>
   );
 };

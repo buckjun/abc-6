@@ -7,6 +7,11 @@ export class InputManager {
   private canvas: HTMLCanvasElement | null = null;
   private pressedKeys: Set<string> = new Set(); // Track single key presses
   private mousePressed: boolean = false; // Track mouse click state
+  
+  // Touch controls
+  private touchMovement: { x: number; y: number } = { x: 0, y: 0 };
+  private isTouchMoving: boolean = false;
+  private touchTarget: { x: number; y: number } | null = null;
 
   constructor() {
     this.init();
@@ -30,6 +35,13 @@ export class InputManager {
     this.canvas.addEventListener('click', this.handleMouseClick);
     this.canvas.addEventListener('mousedown', this.handleMouseDown);
     this.canvas.addEventListener('mouseup', this.handleMouseUp);
+    
+    // Touch event listeners
+    this.canvas.addEventListener('touchstart', this.handleTouchStart, { passive: false });
+    this.canvas.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+    this.canvas.addEventListener('touchend', this.handleTouchEnd, { passive: false });
+    this.canvas.addEventListener('touchcancel', this.handleTouchEnd, { passive: false });
+    
     console.log('Mouse tracking enabled');
   }
 
@@ -113,6 +125,74 @@ export class InputManager {
     this.pressedKeys.delete(event.key);
   };
 
+  // Touch handlers
+  private handleTouchStart = (event: TouchEvent): void => {
+    event.preventDefault();
+    
+    if (event.touches.length === 1) {
+      const touch = event.touches[0];
+      const rect = this.canvas!.getBoundingClientRect();
+      const scaleX = this.canvas!.width / rect.width;
+      const scaleY = this.canvas!.height / rect.height;
+      
+      const x = (touch.clientX - rect.left) * scaleX;
+      const y = (touch.clientY - rect.top) * scaleY;
+      
+      // Left side for movement, right side for targeting
+      if (x < this.canvas!.width * 0.4) {
+        this.isTouchMoving = true;
+        this.touchMovement = { x: 0, y: 0 };
+      } else {
+        // Set target position for aiming
+        this.touchTarget = { x, y };
+        this.mouseX = x;
+        this.mouseY = y;
+      }
+    }
+  };
+
+  private handleTouchMove = (event: TouchEvent): void => {
+    event.preventDefault();
+    
+    if (event.touches.length === 1 && this.isTouchMoving) {
+      const touch = event.touches[0];
+      const rect = this.canvas!.getBoundingClientRect();
+      const scaleX = this.canvas!.width / rect.width;
+      const scaleY = this.canvas!.height / rect.height;
+      
+      const x = (touch.clientX - rect.left) * scaleX;
+      const y = (touch.clientY - rect.top) * scaleY;
+      
+      // Calculate movement direction from center of movement area
+      const centerX = this.canvas!.width * 0.2;
+      const centerY = this.canvas!.height * 0.5;
+      
+      const deltaX = x - centerX;
+      const deltaY = y - centerY;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      
+      if (distance > 20) {
+        const maxDistance = 80;
+        const normalizedDistance = Math.min(distance, maxDistance);
+        this.touchMovement = {
+          x: (deltaX / distance) * (normalizedDistance / maxDistance),
+          y: (deltaY / distance) * (normalizedDistance / maxDistance)
+        };
+      }
+    }
+  };
+
+  private handleTouchEnd = (event: TouchEvent): void => {
+    event.preventDefault();
+    this.isTouchMoving = false;
+    this.touchMovement = { x: 0, y: 0 };
+    
+    // Keep target for aiming briefly
+    setTimeout(() => {
+      this.touchTarget = null;
+    }, 100);
+  };
+
   public isKeyDown(keyCode: string): boolean {
     return this.keys.has(keyCode);
   }
@@ -142,7 +222,20 @@ export class InputManager {
   }
 
   public getMousePosition(): { x: number; y: number } {
+    // Use touch target if available, otherwise use mouse position
+    if (this.touchTarget) {
+      return this.touchTarget;
+    }
     return { x: this.mouseX, y: this.mouseY };
+  }
+
+  // Touch movement methods
+  public getTouchMovement(): { x: number; y: number } {
+    return this.touchMovement;
+  }
+
+  public isTouchingMovement(): boolean {
+    return this.isTouchMoving;
   }
 
   public onCanvasClick(handler: (x: number, y: number) => void): void {
@@ -158,6 +251,12 @@ export class InputManager {
       this.canvas.removeEventListener('click', this.handleMouseClick);
       this.canvas.removeEventListener('mousedown', this.handleMouseDown);
       this.canvas.removeEventListener('mouseup', this.handleMouseUp);
+      
+      // Remove touch event listeners
+      this.canvas.removeEventListener('touchstart', this.handleTouchStart);
+      this.canvas.removeEventListener('touchmove', this.handleTouchMove);
+      this.canvas.removeEventListener('touchend', this.handleTouchEnd);
+      this.canvas.removeEventListener('touchcancel', this.handleTouchEnd);
     }
     
     this.keys.clear();

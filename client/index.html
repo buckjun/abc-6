@@ -2,12 +2,98 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
     <title>ABC-Slayer - 2D Survival Game</title>
     <meta name="description" content="ABC-Slayer: A thrilling 2D top-down survival game with dynamic combat and progression systems" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4A90E2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ABC-Slayer" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    
+    <!-- Prevent zooming and enable fullscreen -->
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- PWA Install Prompt -->
+    <script>
+      // Register Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+      
+      // PWA Install Prompt
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        showInstallButton();
+      });
+      
+      function showInstallButton() {
+        const installBtn = document.createElement('button');
+        installBtn.innerText = '앱으로 설치';
+        installBtn.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 9999;
+          padding: 10px 15px;
+          background: #4A90E2;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 14px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        `;
+        
+        installBtn.addEventListener('click', () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+              if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+                document.body.removeChild(installBtn);
+              }
+              deferredPrompt = null;
+            });
+          }
+        });
+        
+        document.body.appendChild(installBtn);
+      }
+      
+      // Hide install button after successful install
+      window.addEventListener('appinstalled', () => {
+        console.log('PWA was installed');
+        const installBtn = document.querySelector('button');
+        if (installBtn && installBtn.innerText === '앱으로 설치') {
+          document.body.removeChild(installBtn);
+        }
+      });
+    </script>
   </body>
 </html>

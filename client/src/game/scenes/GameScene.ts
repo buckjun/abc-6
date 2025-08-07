@@ -305,6 +305,7 @@ export class GameScene implements Scene {
     let moveX = 0;
     let moveY = 0;
 
+    // Keyboard movement
     if (inputManager.isKeyDown('KeyW') || inputManager.isKeyDown('ArrowUp')) {
       moveY = -1;
     }
@@ -318,10 +319,17 @@ export class GameScene implements Scene {
       moveX = 1;
     }
 
-    // Normalize diagonal movement
-    if (moveX !== 0 && moveY !== 0) {
-      moveX *= 0.707; // 1/sqrt(2)
-      moveY *= 0.707;
+    // Touch movement (prioritize touch over keyboard)
+    if (inputManager.isTouchingMovement()) {
+      const touchMovement = inputManager.getTouchMovement();
+      moveX = touchMovement.x;
+      moveY = touchMovement.y;
+    } else {
+      // Normalize diagonal movement for keyboard
+      if (moveX !== 0 && moveY !== 0) {
+        moveX *= 0.707; // 1/sqrt(2)
+        moveY *= 0.707;
+      }
     }
 
     this.player.setMovement(moveX, moveY);
