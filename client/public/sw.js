@@ -1,9 +1,10 @@
-const CACHE_NAME = 'abc-slayer-v1';
+const CACHE_NAME = 'abc-slayer-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/src/main.tsx',
-  '/src/index.css',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
   '/sounds/background.mp3',
   '/sounds/hit.mp3',
   '/sounds/success.mp3'
